@@ -26,7 +26,28 @@ else:
 
 class BaseParameter(ABC):
     """Abstract base class for ProbFlow Parameters"""
-    pass
+
+    @abstractmethod
+    def __init__(self, *args):
+        pass
+
+
+    @abstractmethod
+    def __call__(self):
+        """Return a sample from or the MAP estimate of this parameter."""
+        pass
+
+
+    @abstractmethod
+    def kl_loss(self):
+        """Compute the sum of the Kullback–Leibler divergences between this
+        parameter's priors and its variational posteriors."""
+        pass
+
+
+    @abstractmethod
+    def posterior_mean(self):
+        """Get the mean of the posterior distribution(s)."""
 
 
 
@@ -80,7 +101,16 @@ class BaseDistribution(ABC):
 
 class BaseModule(ABC):
     """Abstract base class for ProbFlow Modules"""
-    pass
+
+    @abstractmethod
+    def __init__(self, *args):
+        pass
+
+
+    @abstractmethod
+    def __call__(self):
+        """Perform the forward pass"""
+        pass
 
 
 
@@ -131,4 +161,31 @@ class BaseDataGenerator(ABC):
 
 class BaseCallback(ABC):
     """Abstract base class for ProbFlow Callbacks"""
-    pass
+
+    @abstractmethod
+    def __init__(self, *args):
+        pass
+
+
+    @abstractmethod
+    def on_epoch_begin(self):
+        """Will be called at the beginning of each training epoch"""
+        pass
+
+
+    @abstractmethod
+    def on_epoch_end(self):
+        """Will be called at the end of each training epoch"""
+        pass
+
+
+    @abstractmethod
+    def on_train_begin(self):
+        """Will be called at the beginning of training"""
+        pass
+
+
+    @abstractmethod
+    def on_train_end(self):
+        """Will be called at the end of training"""
+        pass

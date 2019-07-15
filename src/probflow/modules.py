@@ -41,17 +41,6 @@ class Module(BaseModule):
 
     """
 
-    @abstractmethod
-    def __init__(self, *args):
-        pass
-
-
-    @abstractmethod
-    def __call__(self):
-        """Perform the forward pass"""
-        pass
-
-
     def _get_params(self, obj):
         """Recursively get parameters from an object"""
             if isinstance(attrib, BaseParameter):
