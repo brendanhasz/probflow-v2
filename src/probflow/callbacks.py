@@ -74,11 +74,13 @@ class LearningRateScheduler(Callback):
 
         # Store function
         self.fn = fn
+        self.epochs = 0
 
 
     def on_epoch_begin(self):
         """Set the learning rate at the beginning of each epoch"""
-        self.model.learning_rate = self.fn(self.model.epochs)
+        self.model.set_learning_rate(self.fn(self.epochs))
+        self.epochs += 1
 
 
 
@@ -125,8 +127,6 @@ class EarlyStopping(Callback):
 
 
 # TODO: model now has to have:
-# learning_rate param
-# epochs param which stores how many epochs model has been trained for
 # metrics dict w/ 'train_loss' and 'val_loss' keys
 # _is_training param which is a bool and stop training if it's false
 # stop_training() method which sets _is_training to False

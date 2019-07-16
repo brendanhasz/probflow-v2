@@ -393,6 +393,12 @@ class Parameter(BaseParameter):
                   ci=ci, bw=bw, alpha=alpha, color=color)
 
 
+        def __del__(self):
+            """Delete this parameter"""
+            # TODO: remove name from name registry in core.settings
+            # TODO: delete variables etc
+
+
 
 class ScaleParameter(Parameter):
     r"""Standard deviation parameter.

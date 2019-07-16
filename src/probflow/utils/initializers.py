@@ -2,9 +2,9 @@
 
 Functions to initialize posterior distribution variables.
 
-* :class:`.xavier` - Xavier initializer
-* :class:`.scale_xavier` - Xavier initializer scaled for scale parameters
-* :class:`.pos_xavier` - positive-only initizlier
+* :func:`.xavier` - Xavier initializer
+* :func:`.scale_xavier` - Xavier initializer scaled for scale parameters
+* :func:`.pos_xavier` - positive-only initizlier
 
 ----------
 

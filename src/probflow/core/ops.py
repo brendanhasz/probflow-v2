@@ -103,6 +103,33 @@ def std(val, axis=None):
 
 
 
+def round(val):
+    """Round to the closest integer"""
+    if get_backend() == 'pytorch':
+        return torch.round(val)
+    else:
+        return tf.math.round(val)
+
+
+
+def abs(val):
+    """Absolute value"""
+    if get_backend() == 'pytorch':
+        return torch.abs(val)
+    else:
+        return tf.math.abs(val)
+
+
+
+def square(val):
+    """Power of 2"""
+    if get_backend() == 'pytorch':
+        return val**2
+    else:
+        return tf.math.square(val)
+
+
+
 def exp(val):
     """The natural exponent."""
     if get_backend() == 'pytorch':
@@ -145,6 +172,7 @@ def sigmoid(val):
         return torch.nn.Sigmoid()(val)
     else:
         return tf.math.sigmoid(val)
+
 
 
 def gather(vals, inds, axis=0):

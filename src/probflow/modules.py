@@ -1,9 +1,10 @@
 """Modules.
 
-Modules are objects which encapsulate some computation, and can contain 
-|Parameters|.  For example, a neural network layer is a good example of a 
-|Module|, since they store parameters, and use those parameters to perform
-a computation (the forward pass of the data through the layer).
+Modules are objects which take Tensor(s) as input, perform some computation on
+that Tensor, and output a Tensor.  Modules can create and contain |Parameters|.
+For example, neural network layers are good examples of a |Module|, since 
+they store parameters, and use those parameters to perform a computation
+(the forward pass of the data through the layer).
 
 * :class:`.Module` - abstract base class for all modules
 * :class:`.Dense` - fully-connected neural network layer
