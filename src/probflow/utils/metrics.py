@@ -58,17 +58,28 @@ def r_squared(y_true, y_pred_dist):
 
 
 
-# TODO: recall
 def true_positive_rate(y_true, y_pred_dist):
     """True positive rate aka sensitivity aka recall."""
-    
-# TODO: specificity
+    p = O.sum(y_true)
+    tp = O.sum(O.round(y_pred_dist.mean()) == y_true)
+    return tp/p
 
-# TODO: precision
 
-# TODO: false_negative_rate
 
-# TODO: false_positive_rate
+def true_negative_rate(y_true, y_pred_dist):
+    """True negative rate aka specificity aka selectivity."""
+    n = O.sum(O.abs(y_true-1))
+    tn = O.sum(O.abs((O.round(y_pred_dist.mean()) == y_true) - 1))
+    return tn/n
+
+
+
+def precision(y_true, y_pred_dist):
+    """Precision."""
+    ap = O.sum(O.round(y_pred_dist.mean()))
+    tp = O.sum(O.round(y_pred_dist.mean()) == y_true)
+    return tp/ap
+
 
 
 def f1_score(y_true, y_pred_dist):
@@ -78,9 +89,16 @@ def f1_score(y_true, y_pred_dist):
     return 2*(p*r)/(p+r)
 
 
+
 # TODO: jaccard_similarity
 
+
+
 # TODO: roc_auc
+
+
+
+# TODO: cross_entropy
 
 
 
@@ -101,18 +119,22 @@ def get_metric_fn(metric):
         'mae': mean_absolute_error,
         'r_squared': r_squared,
         'r2': r_squared,
+        'recall': true_positive_rate,
+        'sensitivity': true_positive_rate,
+        'true_positive_rate': true_positive_rate,
+        'tpr': true_positive_rate,
+        'specificity': true_negative_rate,
+        'selectivity': true_negative_rate,
+        'true_negative_rate': true_negative_rate,
+        'tnr': true_negative_rate,
         'precision': precision,
-        'recall': recall,
-        'sensitivity': recall,
-        'true_positive_rate': recall,
-        'tpr': recall,
         'f1_score': f1_score,
         'f1': f1_score,
-        'jaccard_similarity': jaccard_similarity,
-        'jaccard': jaccard_similarity,
-        'roc_auc': roc_auc,
-        'auroc': roc_auc,
-        'auc': roc_auc,
+        #'jaccard_similarity': jaccard_similarity,
+        #'jaccard': jaccard_similarity,
+        #'roc_auc': roc_auc,
+        #'auroc': roc_auc,
+        #'auc': roc_auc,
     ]
 
     # Error if invalid metric string

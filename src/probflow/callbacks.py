@@ -3,16 +3,28 @@
 The callbacks module contains classes for monitoring and adjusting the 
 training process.
 
+* :class:`.Callback` - abstract base class for all callbacks
+* :class:`.LearningRateScheduler` - set the learning rate by epoch
+* :class:`.MonitorMetric` - record a metric over the course of training
+* :class:`.EarlyStopping` - stop training if some metric stops improving
+
+----------
+
 """
 
 
 __all__ = [
     'Callback',
+    'LearningRateScheduler',
+    'MonitorMetric',
+    'EarlyStopping',
 ]
 
 
 
 from probflow.core.base import BaseCallback
+from probflow.data import DataGenerator
+from probflow.utils.metrics import get_metric_fn
 
 
 
@@ -84,34 +96,82 @@ class LearningRateScheduler(Callback):
 
 
 
+class MonitorMetric(Callback):
+    """Monitor some metric on validation data
+
+    """
+
+    def __init__(self, x, y=None, metric='log_prob')
+
+        # Store metric
+        self.metric_fn = get_metric_fn(metric)
+
+        # Store validation data
+        if isinstance(x, DataGenerator):
+            self.data = x
+        else:
+            self.data = DataGenerator(x, y, batch_size=x.shape[0], 
+                                      shuffle=False)
+
+        # Store metrics and epochs
+        self.current_metric = np.nan
+        self.current_epoch = 0
+        self.metrics = []
+        self.epochs = []
+
+
+    def on_epoch_end(self):
+        """Compute metric on validation data"""
+        self.current_metric = self.model.metric(self.data, 
+                                                metric=self.metric_fn)
+        self.current_epoch += 1
+        self.metrics += [self.current_metric]
+        self.epochs += [self.current_epoch]
+
+
+
 class EarlyStopping(Callback):
-    """Stop training early when loss stops improving
+    """Stop training early when some metric stops decreasing
 
     TODO
 
+    Example
+    -------
+
+    To monitor the mean absolute error of a model, we can create a 
+    :class:`.MonitorMetric` callback:
+
+    .. code-block:: python
+
+        monitor_mae = MonitorMetric(x_val, y_val, 'mse')
+        early_stopping = EarlyStopping(lambda: monitor_mae.current_metric)
+
+        model.fit(x_train, y_train, callbacks=[monitor_mae, early_stopping])
+
+    TODO
     """
     
-    def __init__(self, patience=0, metric='val_loss'):
+    def __init__(self, metric_fn, patience=0):
 
         # Check types
         if not isinstance(patience, int):
             raise TypeError('patience must be an int')
         if patience < 0:
             raise ValueError('patience must be non-negative')
-        if not isinstance(metric, str):
-            raise TypeError('metric must be a str')
+        if not callable(metric_fn):
+            raise TypeError('metric_fn must be a callable')
 
         # Store values
+        self.metric_fn = metric_fn
         self.patience = patience
-        self.metric = metric
         self.best = np.Inf
         self.count = 0
-        # TODO: restore_best_weights?
+        # TODO: restore_best_weights? using save_model and load_model?
 
 
     def on_epoch_end(self):
         """Will be called at the end of each training epoch"""
-        metric = self.model.metrics[self.model.epochs][-1]
+        metric = self.metric_fn()
         if metric < self.best:
             self.best = metric
             self.count = 0
@@ -119,14 +179,3 @@ class EarlyStopping(Callback):
             self.count += 1
             if self.count > self.patience:
                 self.model.stop_training()
-
-
-
-# TODO: record loss/metric callback?
-
-
-
-# TODO: model now has to have:
-# metrics dict w/ 'train_loss' and 'val_loss' keys
-# _is_training param which is a bool and stop training if it's false
-# stop_training() method which sets _is_training to False

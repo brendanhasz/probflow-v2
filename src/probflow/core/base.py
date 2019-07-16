@@ -104,12 +104,13 @@ class BaseModule(ABC):
 
     @abstractmethod
     def __init__(self, *args):
+        """Initialize the module (abstract method)"""
         pass
 
 
     @abstractmethod
     def __call__(self):
-        """Perform the forward pass"""
+        """Perform forward pass (abstract method)"""
         pass
 
 
@@ -117,6 +118,7 @@ class BaseModule(ABC):
 class BaseModel(ABC):
     """Abstract base class for ProbFlow Models"""
     pass
+    # TODO: might not need BaseModel, if it's totally unused...
 
 
 
