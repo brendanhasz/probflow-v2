@@ -1,4 +1,4 @@
-"""Ready-made models
+"""Ready-made models.
 
 The applications module contains pre-built |Models| and |Modules|.
 
@@ -13,6 +13,7 @@ __all__ = [
     'DenseRegression',
     'DenseClassifier',
 ]
+
 
 
 import probflow.core.ops as O

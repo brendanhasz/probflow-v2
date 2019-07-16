@@ -33,6 +33,7 @@ of a :class:`.Parameter`:
 
 """
 
+
 __all__ = [
     'Parameter',
     'ScaleParameter',
@@ -42,8 +43,9 @@ __all__ = [
 ]
 
 
+
 import probflow.core.ops as O
-from probflow.core.settings import get_sampling
+from probflow.core.settings import get_samples
 from probflow.core.settings import get_backend
 from probflow.utils.plotting import plot_dist
 from probflow.utils.initializers import xavier
@@ -170,10 +172,13 @@ class Parameter(BaseParameter):
 
         TODO
         """
-        if get_sampling():
+        samples = get_samples()
+        if samples is None:
+            return self.transform(self.posterior(**self._t_vars()).mean())
+        elif samples == 1:
             return self.transform(self.posterior(**self._t_vars()).sample())
         else:
-            return self.transform(self.posterior(**self._t_vars()).mean())
+            return self.transform(self.posterior(**self._t_vars()).sample(samples))
 
 
     def kl_loss(self):

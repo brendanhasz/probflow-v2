@@ -16,6 +16,7 @@ TODO: more...
 
 """
 
+
 __all__ = [
     'Model',
     'ContinuousModel',
@@ -35,9 +36,7 @@ from probflow.core.base import BaseModule
 from probflow.core.base import BaseModel
 from probflow.core.base import BaseDataGenerator
 from probflow.core.base import BaseCallback
-
 from probflow.modules import Module
-
 from probflow.utils.plotting import plot_dist
 
 

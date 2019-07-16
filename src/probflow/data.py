@@ -7,6 +7,11 @@ TODO: more info...
 """
 
 
+__all__ = [
+    'DataGenerator',
+]
+
+
 
 import numpy as np
 import pandas as pd

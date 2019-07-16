@@ -7,20 +7,9 @@ ProbFlow’s classes.
 
 
 from abc import ABC, abstractmethod
-
-import numpy as np
+from math import ceil
 
 from probflow.core.settings import get_backend
-
-
-# Import the relevant backend
-if get_backend() == 'pytorch':
-    import torch
-    tod = torch.distributions
-else:
-    import tensorflow as tf
-    import tensorflow_probability as tfp
-    tfd = tfp.distributions
 
 
 
@@ -85,7 +74,7 @@ class BaseDistribution(ABC):
 
 
     def sample(self, n=1):
-        """Compute the probability of some data given this distribution"""
+        """Generate a random sample from this distribution"""
         if get_backend() == 'pytorch':
             if isinstance(n, int) and n > 1:
                 return self.__call__().rsample()
@@ -152,7 +141,7 @@ class BaseDataGenerator(ABC):
 
     def __len__(self):
         """Number of batches per epoch"""
-        return int(np.ceil(self.n_samples/self.batch_size))
+        return int(ceil(self.n_samples/self.batch_size))
 
 
     def on_epoch_end(self):

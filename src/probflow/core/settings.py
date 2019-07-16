@@ -3,14 +3,38 @@
 The core.settings module contains global settings about the backend to use,
 what sampling method to use, the default device, and default datatype.
 
+
+Backend
+-------
+
+Which backend to use.  Can be either 
+`TensorFlow 2.0 <http://www.tensorflow.org/beta/>`_ 
+or `PyTorch <http://pytorch.org/>`_.
+
+* :func:`.get_backend`
+* :func:`.set_backend`
+
+
+Samples
+-------
+
+Whether and how many samples to draw from parameter posterior distributions.
+If ``None``, the maximum a posteriori estimate of each parameter will be used.
+If an integer greater than 0, that many samples from each parameter's posterior
+distribution will be used.
+
+* :func:`.get_samples`
+* :func:`.set_samples`
+
+
 """
 
 
 __all__ = [
     'get_backend',
     'set_backend',
-    'get_sampling',
-    'set_sampling',
+    'get_samples',
+    'set_samples',
     'get_flipout',
     'set_flipout',
     'Sampling',
@@ -24,12 +48,12 @@ _BACKEND = 'tensorflow' #or pytorch
 
 
 # Whether to sample from Parameter posteriors or use MAP estimates
-_SAMPLING = False
+_SAMPLES = None
 
 
 
 # Whether to use flipout where possible
-_FLIPOUT = True
+_FLIPOUT = False
 
 
 
@@ -49,21 +73,23 @@ def set_backend(backend):
 
 
 
-def get_sampling():
-    return _SAMPLING
+def get_samples():
+    return _SAMPLES
 
 
 
-def set_sampling(sampling):
-    if isinstance(sampling, bool):
-        _SAMPLING = sampling
+def set_samples(samples):
+    if samples is not None and not isinstance(samples, int):
+        raise TypeError('samples must be an int or None')
+    elif isinstance(samples, int) and samples < 1:
+        raise ValueError('samples must be positive')
     else:
-        raise TypeError('sampling must be True or False')
+        _SAMPLES = samples
 
 
 
 def get_flipout():
-    return _SAMPLING
+    return _FLIPOUT
 
 
 
@@ -76,19 +102,31 @@ def set_flipout(flipout):
 
 
 class Sampling():
-    """Use sampling while within this context manager"""
+    """Use sampling while within this context manager."""
 
 
-    def __enter__(self):
-        set_sampling(True)
+    def __enter__(self, n=1, flipout=False):
+        """Begin sampling.
+
+        Keyword Arguments
+        -----------------
+        n : None or int > 0
+            Number of samples (if any) to draw from parameters' posteriors.
+            Default = 1
+        flipout : bool
+            Whether to use flipout where possible while sampling.
+            Default = False
+        """
+        set_samples(n)
+        set_flipout(flipout)
 
 
     def __exit__(self, _type, _val, _tb):
-        set_sampling(False)
+        """End sampling."""
+        set_samples(None)
+        set_flipout(False)
 
 
-# TODO might have to have a way to set the NUMBER of samples to draw 
-# simultaneously
 
 # TODO also setting sampling flag might be a problem when using @tf.function
 # or pytorch jit/@script?

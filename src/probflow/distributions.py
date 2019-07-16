@@ -28,6 +28,7 @@ Discrete Distributions
 
 """
 
+
 __all__ = [
     'Deterministic',
     'Normal',
@@ -42,11 +43,14 @@ __all__ = [
 ]
 
 
+
 from probflow.core.settings import get_backend
 from probflow.core.base import BaseDistribution
 
 
 # Import the relevant backend
+# TODO: this might not work, if it runs 1st time pf.distributions is imported
+# since will always default to TF
 if get_backend() == 'pytorch':
     import torch
     tod = torch.distributions
