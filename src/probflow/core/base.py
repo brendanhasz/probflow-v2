@@ -39,6 +39,16 @@ class BaseParameter(ABC):
         """Get the mean of the posterior distribution(s)."""
 
 
+    @abstractmethod
+    def posterior_sample(self):
+        """Get the mean of the posterior distribution(s)."""
+
+
+    @abstractmethod
+    def prior_sample(self):
+        """Get the mean of the posterior distribution(s)."""
+
+
 
 class BaseDistribution(ABC):
     """Abstract base class for ProbFlow Distributions"""

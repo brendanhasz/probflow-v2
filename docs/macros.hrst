@@ -1,8 +1,9 @@
 .. Macros
 
 .. |Keras| replace:: `Keras <http://keras.io>`__
-.. |TensorFlow| replace:: `TensorFlow <http://www.tensorflow.org/>`__
-.. |TensorFlow Probability| replace:: `TensorFlow Probability <http://www.tensorflow.org/probability/>`__
+.. |TensorFlow| replace:: `TensorFlow <http://www.tensorflow.org/beta>`__
+.. |TensorFlow Probability| replace:: `TensorFlow Probability <http://www.tensorflow.org/probability>`__
+.. |PyTorch| replace:: `PyTorch <https://pytorch.org>`__
 
 .. |Distribution| replace:: :doc:`Distribution </api_distributions>`
 .. |Distributions| replace:: :doc:`Distributions </api_distributions>`
@@ -20,14 +21,3 @@
 .. |DataFrames| replace:: :class:`DataFrames <pandas.DataFrame>`
 .. |Series| replace:: :class:`Series <pandas.Series>`
 
-.. TENSORFLOW LINKS
-.. |Tensor| replace:: `Tensor <http://www.tensorflow.org/api_docs/python/tf/Tensor>`__
-.. |Tensors| replace:: `Tensors <http://www.tensorflow.org/api_docs/python/tf/Tensor>`__
-.. |Variable| replace:: `Variable <http://www.tensorflow.org/api_docs/python/tf/Variable>`__
-.. |Variables| replace:: `Variables <http://www.tensorflow.org/api_docs/python/tf/Variable>`__
-.. |DType| replace:: `DType <http://www.tensorflow.org/api_docs/python/tf/dtypes/DType>`__
-.. |Initializer| replace:: `Initializer <http://www.tensorflow.org/api_docs/python/tf/initializers>`__
-.. |Initializers| replace:: `Initializers <http://www.tensorflow.org/api_docs/python/tf/initializers>`__
-.. |tf.placeholder| replace:: `tf.placeholder <http://www.tensorflow.org/api_docs/python/tf/placeholder>`__
-.. |tfp.distribution| replace:: `tfp.distribution <http://www.tensorflow.org/probability/api_docs/python/tfp/distributions>`__
-.. |Optimizer| replace:: `Optimizer <https://www.tensorflow.org/api_docs/python/tf/train/Optimizer>`__

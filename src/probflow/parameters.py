@@ -57,9 +57,10 @@ from probflow.utils.initializers import pos_xavier
 class Parameter(BaseParameter):
     r"""Probabilistic parameter(s).
 
-    A probabilistic parameter $\beta$.  The default posterior distribution
-    is the Normal distribution, and the default prior is a Normal 
-    distribution with a mean of 0 and a standard deviation of 1.
+    A probabilistic parameter :math:`\beta`.  The default posterior
+    distribution is the :class:`.Normal` distribution, and the default prior
+    is a :class:`.Normal` distribution with a mean of 0 and a standard
+    deviation of 1.
 
     The prior for a |Parameter| can be set to any |Distribution| object
     (via the ``prior`` argument), and the type of distribution to use for the
@@ -78,7 +79,7 @@ class Parameter(BaseParameter):
 
     Parameters
     ----------
-    shape : int, list of int, or |ndarray|
+    shape : int, List[int], or |ndarray|
         Shape of the array containing the parameters.
         Default = ``1``
     posterior : |Distribution| class
@@ -94,12 +95,12 @@ class Parameter(BaseParameter):
         ``posterior``=:class:`.Gamma`` and
         ``transform = lambda x: tf.reciprocal(x)``
         Default is to use no transform.
-    initializer : dict of callables
+    initializer : Dict[str, callable]
         Initializer functions to use for each variable of the variational
         posterior distribution.  Keys correspond to variable names (arguments
         to the distribution), and values contain functions to initialize those
         variables given ``shape`` as the single argument.
-    var_transform : dict of callables
+    var_transform : Dict[str, callable]
         Transform to apply to each variable of the variational posterior.
         For example to transform the standard deviation parameter from 
         untransformed space to transformed, positive, space, use
@@ -108,6 +109,42 @@ class Parameter(BaseParameter):
     name : str
         Name of the parameter(s).
         Default = ``'Parameter'``
+
+
+    Attributes
+    ----------
+    initializer : Dict[str, callable]
+        Initializer functions for each variable
+    name : str
+        Name of this |Parameter|
+    posterior : |Distribution| class
+        Distribution to use for the variational posterior
+    prior : |Distribution| object
+        This parameter's prior
+    transform : callable
+        Transformation to apply to this parameter's variational distribution
+    shape : List[int]
+        Shape of this parameter
+    untransformed_variables : Dict[str, Tensor]
+        Untransformed variables from the backend
+    var_transform : dict
+        Transformations to apply to each variable
+    variables : Dict[str, Tensor]
+        Variables from the backend, after applying their respective transforms
+
+
+    Methods
+    -------
+    __init__
+    __call__
+    __del__
+    kl_loss
+    posterior_ci
+    posterior_mean
+    posterior_plot
+    posterior_sample
+    prior_plot
+    prior_sample
 
 
     Examples
@@ -152,19 +189,20 @@ class Parameter(BaseParameter):
         self.name = name
 
         # Create variables for the variational distribution
-        self.variables = dict()
+        self.untransformed_variables = dict()
         for var, init in initializer.items():
             if get_backend() == 'pytorch':
-                self.variables[var] = init(shape)
-                self.variables[var].requires_grad = True
+                self.untransformed_variables[var] = init(shape)
+                self.untransformed_variables[var].requires_grad = True
             else:
-                self.variables[var] = tf.Variable(init(shape))
+                self.untransformed_variables[var] = tf.Variable(init(shape))
 
 
-    def _t_vars(self):
+    @property
+    def variables(self):
         """Variables after applying their respective transformations"""
         return {name: self.var_transform[name](val)
-                for name, val in self.variables.items()}
+                for name, val in self.untransformed_variables.items()}
 
 
     def __call__(self):
@@ -172,13 +210,14 @@ class Parameter(BaseParameter):
 
         TODO
         """
-        samples = get_samples()
-        if samples is None:
-            return self.transform(self.posterior(**self._t_vars()).mean())
-        elif samples == 1:
-            return self.transform(self.posterior(**self._t_vars()).sample())
+        posterior = self.posterior(**self.variables)
+        n_samples = get_samples()
+        if n_samples is None:
+            return self.transform(posterior.mean())
+        elif n_samples == 1:
+            return self.transform(posterior.sample())
         else:
-            return self.transform(self.posterior(**self._t_vars()).sample(samples))
+            return self.transform(posterior.sample(n_samples))
 
 
     def kl_loss(self):
@@ -192,7 +231,7 @@ class Parameter(BaseParameter):
 
         TODO
         """
-        return self.transform(self.posterior(**self._t_vars()).mean())
+        return self()
 
 
     def posterior_sample(self, n=1):
@@ -208,10 +247,8 @@ class Parameter(BaseParameter):
         -------
         TODO
         """
-        if n==1:
-            return self.transform(self.posterior(**self._t_vars()).sample())
-        else:
-            return self.transform(self.posterior(**self._t_vars()).sample(n))
+        with Sampling(n=n):
+            return self()
 
 
     def prior_sample(self, n=1):
@@ -398,10 +435,11 @@ class Parameter(BaseParameter):
                   ci=ci, bw=bw, alpha=alpha, color=color)
 
 
-        def __del__(self):
-            """Delete this parameter"""
-            # TODO: remove name from name registry in core.settings
-            # TODO: delete variables etc
+    def __del__(self):
+        """Delete this parameter"""
+        pass
+        # TODO: remove name from name registry in core.settings
+        # TODO: delete variables etc
 
 
 
