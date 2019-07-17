@@ -5,14 +5,19 @@
 .. |TensorFlow Probability| replace:: `TensorFlow Probability <http://www.tensorflow.org/probability>`__
 .. |PyTorch| replace:: `PyTorch <https://pytorch.org>`__
 
+.. |Application| replace:: :doc:`Application </api_applications>`
+.. |Applications| replace:: :doc:`Applications </api_applications>`
+.. |Callback| replace:: :doc:`Callback </api_callbacks>`
+.. |Callbacks| replace:: :doc:`Callbacks </api_callbacks>`
+.. |Data| replace:: :doc:`Data </api_data>`
 .. |Distribution| replace:: :doc:`Distribution </api_distributions>`
 .. |Distributions| replace:: :doc:`Distributions </api_distributions>`
+.. |Model| replace:: :doc:`Model </api_models>`
+.. |Models| replace:: :doc:`Models </api_models>`
+.. |Module| replace:: :doc:`Module </api_modules>`
+.. |Modules| replace:: :doc:`Modules </api_modules>`
 .. |Parameter| replace:: :doc:`Parameter </api_parameters>`
 .. |Parameters| replace:: :doc:`Parameters </api_parameters>`
-.. |Layer| replace:: :doc:`Layer </api_layers>`
-.. |Layers| replace:: :doc:`Layers </api_layers>`
-.. |Model| replace:: :class:`Model <.BaseDistribution>`
-.. |Models| replace:: :class:`Models <.BaseDistribution>`
 
 .. |None| replace:: :obj:`None`
 .. |ndarray| replace:: :class:`ndarray <numpy.ndarray>`

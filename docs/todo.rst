@@ -1,11 +1,14 @@
-Planned Improvements
-====================
+Backlog
+=======
 
-This page has a list of planned improvements, in order of when I plan to get to them.
+This page has a list of planned improvements, in order of when I plan to get
+to them.  If you're interested in tackling one of them, I'd be thrilled and
+`Pull requests <https://github.com/brendanhasz/probflow/pulls>`_
+are totally welcome!
 
 
-Backlog (short term):
----------------------
+Backlog
+-------
 
 * Model basics
 * Name registry
@@ -14,6 +17,7 @@ Backlog (short term):
 * Model evaluation methods
 * Tests for those
 * Bayes estimate / decision methods
+* Convolutional modules
 
 
 Notes

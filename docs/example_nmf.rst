@@ -6,6 +6,8 @@ Neural Matrix Factorization
 .. include:: macros.hrst
 
 
+TODO: update this to v2
+
 TODO: description...
 
 TODO: for a vanilla matrix factorization

@@ -442,7 +442,7 @@ class Bernoulli(BaseDistribution):
     """
 
     def __init__(self, logits=None, probs=None):
-        # TODO: type checks?
+        # TODO: type checks? and check that at least 1 is passed
         self.logits = logits
         self.probs = probs
 
@@ -490,7 +490,7 @@ class Categorical(BaseDistribution):
     """
 
     def __init__(self, logits=None, probs=None):
-        # TODO: type checks?
+        # TODO: type checks? and check that at least 1 is passed
         self.logits = logits
         self.probs = probs
 
