@@ -1,8 +1,12 @@
-.. _layers:
+.. _ug_modules:
 
-Layers
-======
+Modules
+=======
 
 .. include:: macros.hrst
 
-TODO: types of layers and how to use them, etc
+TODO: what a module is
+
+TODO: creating your own module
+
+TODO: included modules (Dense, Sequential, etc)

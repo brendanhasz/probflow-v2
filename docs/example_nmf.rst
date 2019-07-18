@@ -32,6 +32,7 @@ TODO: for a vanilla matrix factorization
     model = Normal(predictions, error)
     model.fit(df[['user_id', 'item_id']], df['rating'])
 
+
 or for neural matrix factorization https://arxiv.org/abs/1708.05031
 
 .. code-block:: python

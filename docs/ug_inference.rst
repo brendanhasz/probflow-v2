@@ -1,4 +1,4 @@
-.. _inference:
+.. _ug_inference:
 
 Bayesian Modeling
 =================
