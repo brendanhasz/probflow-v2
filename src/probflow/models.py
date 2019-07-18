@@ -28,8 +28,11 @@ __all__ = [
 
 
 
+import warnings
+
 import matplotlib.pyplot as plt
 
+from probflow.core.settings import get_backend
 from probflow.core.base import BaseParameter
 from probflow.core.base import BaseDistribution
 from probflow.core.base import BaseModule
@@ -38,6 +41,7 @@ from probflow.core.base import BaseDataGenerator
 from probflow.core.base import BaseCallback
 from probflow.modules import Module
 from probflow.utils.plotting import plot_dist
+from probflow.data import DataGenerator
 
 
 # TODO: might not need to inherit BaseModel, if it's totally unused...
@@ -54,12 +58,12 @@ class Model(BaseModel, Module):
 
     This class inherits several methods from :class:`.Module`:
 
-    * :func:`~probflow.models.Model.__init__`
-    * :func:`~probflow.models.Model.__call__`
+    * :func:`~probflow.models.Model.__init__` (abstract method)
+    * :func:`~probflow.models.Model.__call__` (abstract method)
     * :func:`~probflow.models.Model.parameters`
     * :func:`~probflow.models.Model.kl_loss`
 
-    and adds the following model-specific methods:
+    and adds the following Model-specific methods:
 
     * :func:`~probflow.models.Model.fit`
     * :func:`~probflow.models.Model.stop_training`
@@ -81,15 +85,162 @@ class Model(BaseModel, Module):
 
     """
 
+    def _train_step_tensorflow(self, N):
+        """Get the training step function for TensorFlow"""
 
-    def fit(self, ...):
-        """TODO
+        import tensorflow as tf
 
-        """
+        @tf.function
+        def train_step(x_data, y_data):
+            # TODO: with Sampling(...) here?
+            with tf.GradientTape() as tape:
+                log_likelihoods = self(x_data).log_prob(y_data)
+                kl_loss = self.kl_loss
+                elbo_loss = kl_loss/N - tf.reduce_mean(log_likelihoods)
+            variables = self.trainable_variables #TODO: won't work unless Module inherits tf.keras.Model!
+            gradients = tape.gradient(elbo_loss, variables)
+            optimizer.apply_gradients(zip(gradients, variables))
+            return elbo_loss
+
+        return train_step
+
+
+    def _train_step_pytorch(self, N):
+        """Get the training step function for PyTorch"""
         pass
+        # TODO
+
+
+    def fit(self,
+            x,
+            y=None,
+            batch_size=128,
+            epochs=100,
+            shuffle=True,
+            validation_generator=None,
+            validation_split=None,
+            validation_shuffle=True,
+            optimizer=None,
+            optimizer_kwargs={},
+            learning_rate=1e-3,
+            verbose=False):
+        """Fit the model.
+
+        TODO
+
+
+        Parameters
+        ----------
+        x : |ndarray| or |DataFrame| or |Series| or |DataGenerator|
+            Independent variable values (or, if fitting a generative model,
+            the dependent variable values).  Should be of shape (Nsamples,...)
+        y : |None| or |ndarray| or |DataFrame| or |Series| or |DataGenerator|
+            Dependent variable values (or, if fitting a generative model, 
+            ``None``). Should be of shape (Nsamples,...).  Default = ``None``
+        batch_size : int
+            Number of samples to use per minibatch.
+            Default = ``128``
+        epochs : int
+            Number of epochs to train the model.
+            Default = ``100``
+        shuffle : bool
+            Whether to shuffle the data each epoch.  Note that this is ignored
+            if ``x`` is a |DataGenerator|.
+            Default = ``True``
+        validation_generator : |None| or |DataGenerator|
+            A |DataGenerator| to generate the validation data. The default is
+            ``None``, i.e., do not evaluate the model on validation data.
+            Note that if both ``validation_generator`` and ``validation_split``
+            are set, ``validation_split`` will be ignored and the validation 
+            data will be generated from the ``validation_generator``.
+        validation_split : |None| or float between 0 and 1
+            Proportion of the data to use as validation data.
+            If ``None``, won't evaluate metrics on the validation data 
+            unless a ``validation_generator`` was passed.
+            Note that setting ``validation_split`` will not work if ``x`` is 
+            a |DataGenerator|.
+            Default = ``None``.
+        validation_shuffle : bool
+            Whether to shuffle which data is used for validation vs.training.
+            If ``False``, the last ``validation_split`` proportion of the
+            input data is used for validation.
+            Default = ``True``
+        optimizer : |None| or a backend-specific optimizer
+            What optimizer to use for optimizing the variational posterior
+            distributions' variables.  When the backend is |TensorFlow|,
+            the default is to use adam (``tf.keras.optimizers.Adam``).
+            When the backend is |PyTorch|, the default is to use TODO
+        optimizer_kwargs : dict
+            Keyword arguments to pass to the optimizer.
+            Default is an empty dict.
+        learning_rate : float
+            Learning rate for the optimizer.
+            Note that the learning rate can be updated during training using
+            the set_learning_rate method.
+            Default = ``1e-3``
+        verbose : bool
+            Whether to print progress during training.
+            Default = ``False``
+        """
+
+        # Import backend
+        if get_backend() == 'pytorch':
+            import torch
+        else:
+            import tensorflow as tf
+
+        # Cannot split if passed a generator
+        if isinstance(x, DataGenerator) and validation_split is not None:
+            raise RuntimeError('Training data must be numpy/pandas arrays '
+                               'to use validation_split')
+
+        # Will use validation_generator over split
+        if validation_generator is not None and validation_split is not None:
+            warnings.warn('A validation_generator was passed, but '
+                          'validation_split was also set.  Ignoring '
+                          'validation_split and using the '
+                          'validation_generator.')
+
+        # Create DataGenerators for training and validation data
+        if isinstance(x, DataGenerator):
+            if validation_split is not None:
+                raise RuntimeError('Training data must be numpy/pandas '
+                                   'arrays to use validation_split')
+            else:
+                data = x
+                data_val = validation_generator
+        else:
+            if validation_split is None:
+                data = DataGenerator(x, y, batch_size=batch_size, 
+                                     shuffle=shuffle)
+                data_val = None
+            else:
+                x_train, y_train, x_val, y_val = train_val_split(
+                    x, y, validation_split, validation_shuffle)
+                data = DataGenerator(x_train, y_train, batch_size=batch_size,
+                                     shuffle=shuffle)
+                data_val = DataGenerator(x_val, y_val, batch_size=batch_size,
+                                         shuffle=shuffle)
+
+        # Use default optimizer if none specified
+        if optimizer is None:
+            if get_backend() == 'pytorch':
+                raise NotImplementedError
+                # TODO
+            else:
+                optimizer = tf.keras.optimizers.Adam(lr=learning_rate,
+                                                     **optimizer_kwargs)
+
+        # Create a function to perform one training step
+        if get_backend() == 'pytorch':
+            train_step = self._train_step_pytorch(data.n_samples)
+        else:
+            train_step = self._train_step_tensorflow(data.n_samples)
+
         # TODO!
         # TODO: _learning_rate, update optimizer if changed
         # TODO: _is_training, stop training if false
+
 
 
 

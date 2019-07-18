@@ -19,6 +19,8 @@
 .. |Parameter| replace:: :doc:`Parameter </api_parameters>`
 .. |Parameters| replace:: :doc:`Parameters </api_parameters>`
 
+.. |DataGenerator| replace:: :class:`.DataGenerator`
+
 .. |None| replace:: :obj:`None`
 .. |ndarray| replace:: :class:`ndarray <numpy.ndarray>`
 .. |ndarrays| replace:: :class:`ndarrays <numpy.ndarray>`

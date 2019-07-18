@@ -46,6 +46,9 @@ def train_val_split(x, y, val_split, val_shuffle):
         * x_val: independent variable values of the validation data
         * y_val: dependent variable values of the validation data
     """
+
+    # TODO: handle if y is None
+    
     if val_split > 0:
         num_val = int(val_split*x.shape[0])
         train_ix = np.full(x.shape[0], True)
@@ -70,7 +73,7 @@ def train_val_split(x, y, val_split, val_shuffle):
         y_train = y
         x_val = x
         y_val = y
-    return x_train.shape[0], x_train, y_train, x_val, y_val
+    return x_train, y_train, x_val, y_val
 
 
 
@@ -82,6 +85,9 @@ class DataGenerator(BaseDataGenerator):
     """
 
     def __init__(self, x, y, batch_size=128, shuffle=True):
+
+        # TODO: allow x and/or y to be None.  If so, set y=x and x=None
+        # ie you're doing a generative model
 
         # Check types
         if not isinstance(x, (np.ndarray, pd.DataFrame, pd.Series)):
