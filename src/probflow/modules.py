@@ -76,7 +76,7 @@ class Module(BaseModule):
 
     def parameters(self):
         """List Parameters contained in this Module and its sub-Modules."""
-        return [p for a in dir(self) for p in self._params(getattr(self, a))]
+        return [p for _, a in vars(self).items() for p in self._params(a)]
 
 
     def kl_loss(self):
