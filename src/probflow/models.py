@@ -78,7 +78,6 @@ class Model(BaseModel, Module):
     * :func:`~probflow.models.Model.prob`
     * :func:`~probflow.models.Model.prob_by`
     * :func:`~probflow.models.Model.summary`
-    * :func:`~probflow.models.Model.__del__`
 
     """
 
@@ -619,16 +618,6 @@ class Model(BaseModel, Module):
         # TODO
 
 
-    def __del__(self):
-        """Delete the model, its sub-modules, and its parameters.
-
-        TODO
-
-        """
-        pass
-        # TODO
-
-
 
 class ContinuousModel(Model):
     """Abstract base class for probflow models where the dependent variable 
@@ -664,7 +653,6 @@ class ContinuousModel(Model):
     * :func:`~probflow.models.ContinuousModel.prob`
     * :func:`~probflow.models.ContinuousModel.prob_by`
     * :func:`~probflow.models.ContinuousModel.summary`
-    * :func:`~probflow.models.ContinuousModel.__del__`
 
     and adds the following continuous-model-specific methods:
 
@@ -1183,7 +1171,6 @@ class DiscreteModel(ContinuousModel):
     * :func:`~probflow.models.DiscreteModel.prob`
     * :func:`~probflow.models.DiscreteModel.prob_by`
     * :func:`~probflow.models.DiscreteModel.summary`
-    * :func:`~probflow.models.DiscreteModel.__del__`
 
     and also inherits several methods from :class:`.ContinuousModel`:
 
@@ -1335,7 +1322,6 @@ class CategoricalModel(Model):
     * :func:`~probflow.models.CategoricalModel.prob`
     * :func:`~probflow.models.CategoricalModel.prob_by`
     * :func:`~probflow.models.CategoricalModel.summary`
-    * :func:`~probflow.models.CategoricalModel.__del__`
 
     and adds the following categorical-model-specific methods:
 

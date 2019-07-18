@@ -41,56 +41,48 @@ class Module(BaseModule):
 
     TODO
 
+    Methods
+    -------
+    __init__ (abstract method)
+    __call__ (abstract method)
+    parameters
+    kl_loss
+
     """
 
-    def _get_params(self, obj):
-        """Recursively get parameters from an object"""
-            if isinstance(attrib, BaseParameter):
-                return [attrib]
-            elif isinstance(attrib, BaseModule):
-                return attrib.parameters()
-            elif isinstance(attrib, list):
-                return self._list_params(attrib)
-            elif isinstance(attrib, dict):
-                return self._dict_params(attrib)
+    def _params(self, obj):
+        """Recursively get |Parameters| contained within an object"""
+            if isinstance(obj, BaseParameter):
+                return [obj]
+            elif isinstance(obj, BaseModule):
+                return obj.parameters()
+            elif isinstance(obj, list):
+                return self._list_params(obj)
+            elif isinstance(obj, dict):
+                return self._dict_params(obj)
             else:
                 return []
 
 
-    def _list_params(self, obj):
+    def _list_params(self, the_list):
         """Recursively search for parameters in lists"""
-        params = []
-        for e in obj:
-            params += self._get_params(e)
-        return params
+        return [p for e in the_list for p in self._params(e)]
 
 
-
-    def _dict_params(self, obj):
+    def _dict_params(self, the_dict):
         """Recursively search for parameters in lists"""
-        params = []
-        for _, e in obj.items():
-            params += self._get_params(e)
-        return params
+        return [p for _, e in the_dict.items() for p in self._params(e)]
 
 
     def parameters(self):
-        """Get a list of all parameters contained in this module and 
-        sub-modules.
-
-        TODO
-
-        """
-        params = []
-        for a in dir(self):
-            params += self._get_params(getattr(self, a))
-        return params
+        """List Parameters contained in this Module and its sub-Modules."""
+        return [p for a in dir(self) for p in self._params(getattr(self, a))]
 
 
     def kl_loss(self):
-        """Compute the sum of the Kullback–Leibler divergences between
-        priors and their variational posteriors for all parameters in this
-        module and its sub-modules."""
+        """Compute the sum of the Kullback-Leibler divergences between
+        priors and their variational posteriors for all Parameters in this
+        Module and its sub-Modules."""
         return O.sum([p.kl_loss for p in self.parameters()])
 
 

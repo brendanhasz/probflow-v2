@@ -137,7 +137,6 @@ class Parameter(BaseParameter):
     -------
     __init__
     __call__
-    __del__
     kl_loss
     posterior_ci
     posterior_mean
@@ -433,13 +432,6 @@ class Parameter(BaseParameter):
         # Plot the posterior densities
         plot_dist(samples, xlabel=self.name, style=style, bins=bins, 
                   ci=ci, bw=bw, alpha=alpha, color=color)
-
-
-    def __del__(self):
-        """Delete this parameter"""
-        pass
-        # TODO: remove name from name registry in core.settings
-        # TODO: delete variables etc
 
 
 
