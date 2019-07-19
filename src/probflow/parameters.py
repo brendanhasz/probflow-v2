@@ -129,8 +129,6 @@ class Parameter(BaseParameter):
         Untransformed variables from the backend
     var_transform : dict
         Transformations to apply to each variable
-    variables : Dict[str, Tensor]
-        Variables from the backend, after applying their respective transforms
 
 
     Methods
@@ -144,6 +142,8 @@ class Parameter(BaseParameter):
     posterior_sample
     prior_plot
     prior_sample
+    trainable_variables
+    variables
 
 
     Examples
@@ -197,7 +197,11 @@ class Parameter(BaseParameter):
                 self.untransformed_variables[var] = tf.Variable(init(shape))
 
 
-    @property
+    def trainable_variables(self):
+        """Get a list of trainable variables from the backend"""
+        return [e for _, e in self.untransformed_variables.items()]
+
+
     def variables(self):
         """Variables after applying their respective transformations"""
         return {name: self.var_transform[name](val)
@@ -209,7 +213,7 @@ class Parameter(BaseParameter):
 
         TODO
         """
-        posterior = self.posterior(**self.variables)
+        posterior = self.posterior(**self.variables())
         n_samples = get_samples()
         if n_samples is None:
             return self.transform(posterior.mean())

@@ -33,6 +33,7 @@ import warnings
 import matplotlib.pyplot as plt
 
 from probflow.core.settings import get_backend
+from probflow.core.settings import Sampling
 from probflow.core.base import BaseParameter
 from probflow.core.base import BaseDistribution
 from probflow.core.base import BaseModule
@@ -92,14 +93,14 @@ class Model(BaseModel, Module):
 
         @tf.function
         def train_step(x_data, y_data):
-            # TODO: with Sampling(...) here?
-            with tf.GradientTape() as tape:
-                log_likelihoods = self(x_data).log_prob(y_data)
-                kl_loss = self.kl_loss
-                elbo_loss = kl_loss/N - tf.reduce_mean(log_likelihoods)
-            variables = self.trainable_variables #TODO: won't work unless Module inherits tf.keras.Model!
-            gradients = tape.gradient(elbo_loss, variables)
-            optimizer.apply_gradients(zip(gradients, variables))
+            with Sampling(n=n, flipout=flipout):
+                with tf.GradientTape() as tape:
+                    log_likelihoods = self(x_data).log_prob(y_data)
+                    kl_loss = self.kl_loss()
+                    elbo_loss = kl_loss/N - tf.reduce_mean(log_likelihoods)
+                variables = self.trainable_variables()
+                gradients = tape.gradient(elbo_loss, variables)
+                optimizer.apply_gradients(zip(gradients, variables))
             return elbo_loss
 
         return train_step

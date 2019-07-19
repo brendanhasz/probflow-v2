@@ -51,7 +51,7 @@ class Module(BaseModule):
     """
 
     def _params(self, obj):
-        """Recursively get |Parameters| contained within an object"""
+        """Recursively search for |Parameters| contained within an object"""
             if isinstance(obj, BaseParameter):
                 return [obj]
             elif isinstance(obj, BaseModule):
@@ -65,24 +65,29 @@ class Module(BaseModule):
 
 
     def _list_params(self, the_list):
-        """Recursively search for parameters in lists"""
+        """Recursively search for |Parameters| contained in a list"""
         return [p for e in the_list for p in self._params(e)]
 
 
     def _dict_params(self, the_dict):
-        """Recursively search for parameters in lists"""
+        """Recursively search for |Parameters| contained in a dict"""
         return [p for _, e in the_dict.items() for p in self._params(e)]
 
 
     def parameters(self):
-        """List Parameters contained in this Module and its sub-Modules."""
+        """Get a list of |Parameters| in this |Module| and its sub-Modules."""
         return [p for _, a in vars(self).items() for p in self._params(a)]
+
+
+    def trainable_variables(self):
+        """Get a list of trainable backend variables within this |Module|"""
+        return [v for p in self.parameters() for v in p.trainable_variables()]
 
 
     def kl_loss(self):
         """Compute the sum of the Kullback-Leibler divergences between
-        priors and their variational posteriors for all Parameters in this
-        Module and its sub-Modules."""
+        priors and their variational posteriors for all |Parameters| in this
+        |Module| and its sub-Modules."""
         return O.sum([p.kl_loss for p in self.parameters()])
 
 
