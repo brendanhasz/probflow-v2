@@ -3,7 +3,9 @@
 .. |Keras| replace:: `Keras <http://keras.io>`__
 .. |TensorFlow| replace:: `TensorFlow <http://www.tensorflow.org/beta>`__
 .. |TensorFlow Probability| replace:: `TensorFlow Probability <http://www.tensorflow.org/probability>`__
-.. |PyTorch| replace:: `PyTorch <https://pytorch.org>`__
+.. |PyTorch| replace:: `PyTorch <http://pytorch.org>`__
+.. |tfp.Distribution| replace:: `tensorflow_probability.distributions.Distribution <http://www.tensorflow.org/probability/api_docs/python/tfp/distributions/Distribution>`__
+.. |torch.Distribution| replace:: `torch.distributions.distribution.Distribution <https://pytorch.org/docs/stable/distributions.html#torch.distributions.distribution.Distribution>`__
 
 .. |Application| replace:: :doc:`Application </api_applications>`
 .. |Applications| replace:: :doc:`Applications </api_applications>`

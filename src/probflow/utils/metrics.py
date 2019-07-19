@@ -106,7 +106,7 @@ def get_metric_fn(metric):
     """Get a function corresponding to a metric string"""
 
     # List of valid metric strings
-    metrics = [
+    metrics = {
         'lp': log_prob,
         'log_prob': log_prob,
         'accuracy': accuracy,
@@ -135,7 +135,7 @@ def get_metric_fn(metric):
         #'roc_auc': roc_auc,
         #'auroc': roc_auc,
         #'auc': roc_auc,
-    ]
+    }
 
     # Error if invalid metric string
     if metric not in metrics:

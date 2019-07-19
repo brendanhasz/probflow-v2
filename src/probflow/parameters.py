@@ -117,7 +117,7 @@ class Parameter(BaseParameter):
         Initializer functions for each variable
     name : str
         Name of this |Parameter|
-    posterior : |Distribution| class
+    posterior_fn : |Distribution| class
         Distribution to use for the variational posterior
     prior : |Distribution| object
         This parameter's prior
@@ -131,11 +131,16 @@ class Parameter(BaseParameter):
         Transformations to apply to each variable
 
 
+    TODO: would be nice if untransformed_variables, trainable_variables,
+    variables, prior, and posterior were all either ATTRIBUTES or METHODS
+
+
     Methods
     -------
     __init__
     __call__
     kl_loss
+    posterior
     posterior_ci
     posterior_mean
     posterior_plot
@@ -180,7 +185,7 @@ class Parameter(BaseParameter):
 
         # Assign attributes
         self.shape = shape
-        self.posterior = posterior
+        self.posterior_fn = posterior
         self.prior = prior
         self.transform = transform
         self.initializer = initializer
@@ -208,25 +213,29 @@ class Parameter(BaseParameter):
                 for name, val in self.untransformed_variables.items()}
 
 
+    def posterior(self):
+        """This Parameter's variational posterior distribution"""
+        return self.posterior_fn(**self.variables())
+
+
     def __call__(self):
         """Return a sample from or the MAP estimate of this parameter.
 
         TODO
         """
-        posterior = self.posterior(**self.variables())
         n_samples = get_samples()
         if n_samples is None:
-            return self.transform(posterior.mean())
+            return self.transform(self.posterior.mean())
         elif n_samples == 1:
-            return self.transform(posterior.sample())
+            return self.transform(self.posterior.sample())
         else:
-            return self.transform(posterior.sample(n_samples))
+            return self.transform(self.posterior.sample(n_samples))
 
 
     def kl_loss(self):
         """Compute the sum of the Kullback–Leibler divergences between this
         parameter's priors and its variational posteriors."""
-        return O.sum(O.kl_divergence(self.posterior, self.prior))
+        return O.sum(O.kl_divergence(self.posterior()(), self.prior()))
 
 
     def posterior_mean(self):

@@ -27,6 +27,15 @@ distribution will be used.
 * :func:`.set_samples`
 
 
+Flipout
+-------
+
+Whether to use `Flipout <https://arxiv.org/abs/1803.04386>`_ where possible.
+
+* :func:`.get_flipout`
+* :func:`.set_flipout`
+
+
 """
 
 
@@ -42,39 +51,56 @@ __all__ = [
 
 
 
-# What backend to use
-_BACKEND = 'tensorflow' #or pytorch
+class _Settings():
+    """Class to store ProbFlow global settings
+
+    Attributes
+    ----------
+    _BACKEND : str {'tensorflow' or 'pytorch'}
+        What backend to use
+    _SAMPLES : |None| or int > 0
+        How many samples to take from |Parameter| variational posteriors.
+        If |None|, will use MAP estimates.
+    _FLIPOUT : bool
+        Whether to use flipout where possible
+    """
+
+    def __init__(self):
+        self._BACKEND = 'tensorflow'
+        self._SAMPLES = None
+        self._FLIPOUT = False
 
 
 
-# Whether to sample from Parameter posteriors or use MAP estimates
-_SAMPLES = None
+# Global ProbFlow settings
+__SETTINGS__ = _Settings()
 
 
 
-# Whether to use flipout where possible
-_FLIPOUT = False
+# TODO: default datatype
+
+# TODO: default device (for pytorch at least)
 
 
 
 def get_backend():
-    return _BACKEND
+    return __SETTINGS__._BACKEND
 
 
 
 def set_backend(backend):
     if isinstance(backend, str):
         if backend in ['tensorflow', 'pytorch']:
-            _BACKEND = backend
+            __SETTINGS__._BACKEND = backend
         else:
             raise ValueError('backend must be either tensorflow or pytorch')
     else:
-        raise ValueError('backend must be a string')
+        raise TypeError('backend must be a string')
 
 
 
 def get_samples():
-    return _SAMPLES
+    return __SETTINGS__._SAMPLES
 
 
 
@@ -84,18 +110,18 @@ def set_samples(samples):
     elif isinstance(samples, int) and samples < 1:
         raise ValueError('samples must be positive')
     else:
-        _SAMPLES = samples
+        __SETTINGS__._SAMPLES = samples
 
 
 
 def get_flipout():
-    return _FLIPOUT
+    return __SETTINGS__._FLIPOUT
 
 
 
 def set_flipout(flipout):
     if isinstance(flipout, bool):
-        _FLIPOUT = flipout
+        __SETTINGS__._FLIPOUT = flipout
     else:
         raise TypeError('flipout must be True or False')
 
@@ -105,7 +131,12 @@ class Sampling():
     """Use sampling while within this context manager."""
 
 
-    def __enter__(self, n=1, flipout=False):
+    def __init__(self, n=1, flipout=False):
+        self._n = n
+        self._flipout = flipout
+
+
+    def __enter__(self):
         """Begin sampling.
 
         Keyword Arguments
@@ -117,16 +148,11 @@ class Sampling():
             Whether to use flipout where possible while sampling.
             Default = False
         """
-        set_samples(n)
-        set_flipout(flipout)
+        set_samples(self._n)
+        set_flipout(self._flipout)
 
 
     def __exit__(self, _type, _val, _tb):
-        """End sampling."""
+        """End sampling and reset sampling settings to defaults"""
         set_samples(None)
         set_flipout(False)
-
-
-
-# TODO also setting sampling flag might be a problem when using @tf.function
-# or pytorch jit/@script?
