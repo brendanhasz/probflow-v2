@@ -6,47 +6,22 @@ ProbFlow’s classes.
 """
 
 
+
+__all__ = [
+    'BaseDistribution',
+    'BaseParameter',
+    'BaseModule',
+    'BaseModel',
+    'BaseDataGenerator',
+    'BaseCallback',
+]
+
+
+
 from abc import ABC, abstractmethod
 from math import ceil
 
 from probflow.core.settings import get_backend
-
-
-
-class BaseParameter(ABC):
-    """Abstract base class for ProbFlow Parameters"""
-
-    @abstractmethod
-    def __init__(self, *args):
-        pass
-
-
-    @abstractmethod
-    def __call__(self):
-        """Return a sample from or the MAP estimate of this parameter."""
-        pass
-
-
-    @abstractmethod
-    def kl_loss(self):
-        """Compute the sum of the Kullback–Leibler divergences between this
-        parameter's priors and its variational posteriors."""
-        pass
-
-
-    @abstractmethod
-    def posterior_mean(self):
-        """Get the mean of the posterior distribution(s)."""
-
-
-    @abstractmethod
-    def posterior_sample(self):
-        """Get the mean of the posterior distribution(s)."""
-
-
-    @abstractmethod
-    def prior_sample(self):
-        """Get the mean of the posterior distribution(s)."""
 
 
 
@@ -95,6 +70,43 @@ class BaseDistribution(ABC):
                 return self.__call__().sample()
             else:
                 return self.__call__().sample(n)
+
+
+
+class BaseParameter(ABC):
+    """Abstract base class for ProbFlow Parameters"""
+
+    @abstractmethod
+    def __init__(self, *args):
+        pass
+
+
+    @abstractmethod
+    def __call__(self):
+        """Return a sample from or the MAP estimate of this parameter."""
+        pass
+
+
+    @abstractmethod
+    def kl_loss(self):
+        """Compute the sum of the Kullback–Leibler divergences between this
+        parameter's priors and its variational posteriors."""
+        pass
+
+
+    @abstractmethod
+    def posterior_mean(self):
+        """Get the mean of the posterior distribution(s)."""
+
+
+    @abstractmethod
+    def posterior_sample(self):
+        """Get the mean of the posterior distribution(s)."""
+
+
+    @abstractmethod
+    def prior_sample(self):
+        """Get the mean of the posterior distribution(s)."""
 
 
 
