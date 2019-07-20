@@ -44,9 +44,18 @@ __all__ = [
 
 
 
-import probflow.core.ops as O
+from typing import Union, List, Dict, Type, Callable
+
+import numpy as np
+
 from probflow.core.settings import get_samples
 from probflow.core.settings import get_backend
+from probflow.core.base import BaseParameter
+from probflow.core.base import BaseDistribution
+import probflow.core.ops as O
+from probflow.distributions import Normal
+from probflow.distributions import InverseGamma
+from probflow.distributions import Dirichlet
 from probflow.utils.plotting import plot_dist
 from probflow.utils.initializers import xavier
 from probflow.utils.initializers import scale_xavier
@@ -163,25 +172,25 @@ class Parameter(BaseParameter):
     """
 
     def __init__(self,
-                 shape=1,
-                 posterior=Normal,
-                 prior=Normal(0, 1),
-                 transform=lambda x: x,
-                 initializer={'loc': xavier, 'scale': scale_xavier},
-                 var_transform={'loc': lambda x: x, 'scale': O.softplus},
-                 name='Parameter'):
-        """Construct an array of Parameter(s)."""
-
-        # Check types
-        # TODO
+                 shape: Union[int, List[int]] = 1,
+                 posterior: Type[BaseDistribution] = Normal,
+                 prior: BaseDistribution = Normal(0, 1),
+                 transform: Callable = lambda x: x,
+                 initializer: Dict[str, Callable] = {'loc': xavier,
+                                                     'scale': scale_xavier},
+                 var_transform : Dict[str, Callable] = {'loc': lambda x: x,
+                                                        'scale': O.softplus},
+                 name: str = 'Parameter'):
 
         # Make shape a list
-        if isinstance(shape, tuple):
-            shape = list(shape)
         if isinstance(shape, int):
             shape = [shape]
         if isinstance(shape, np.ndarray):
             shape = shape.tolist()
+
+        # Check values
+        if any(e<1 for e in shape):
+            raise ValueError('all shapes must be >0')
 
         # Assign attributes
         self.shape = shape
@@ -199,23 +208,27 @@ class Parameter(BaseParameter):
                 self.untransformed_variables[var] = init(shape)
                 self.untransformed_variables[var].requires_grad = True
             else:
+                import tensorflow as tf
                 self.untransformed_variables[var] = tf.Variable(init(shape))
 
 
+    @property
     def trainable_variables(self):
         """Get a list of trainable variables from the backend"""
         return [e for _, e in self.untransformed_variables.items()]
 
 
+    @property
     def variables(self):
         """Variables after applying their respective transformations"""
         return {name: self.var_transform[name](val)
                 for name, val in self.untransformed_variables.items()}
 
 
+    @property
     def posterior(self):
         """This Parameter's variational posterior distribution"""
-        return self.posterior_fn(**self.variables())
+        return self.posterior_fn(**self.variables)
 
 
     def __call__(self):
@@ -235,7 +248,7 @@ class Parameter(BaseParameter):
     def kl_loss(self):
         """Compute the sum of the Kullback–Leibler divergences between this
         parameter's priors and its variational posteriors."""
-        return O.sum(O.kl_divergence(self.posterior()(), self.prior()))
+        return O.sum(O.kl_divergence(self.posterior(), self.prior), axis=None)
 
 
     def posterior_mean(self):
@@ -266,17 +279,13 @@ class Parameter(BaseParameter):
     def prior_sample(self, n=1):
         """Sample from the prior distribution.
 
-        .. admonition:: Model must be fit first!
-
-            Before calling :meth:`.prior_sample` on a |Parameter|, you must
-            first :meth:`fit <.BaseDistribution.fit>` the model to which it
-            belongs to some data.
 
         Parameters
         ----------
         n : int > 0
             Number of samples to draw from the prior distribution.
             Default = 1
+
 
         Returns
         -------
@@ -579,8 +588,8 @@ class CategoricalParameter(Parameter):
     """
 
     def __init__(self,
-                 k=2,
-                 shape=1,
+                 k: int = 2,
+                 shape: Union[int, List[int]] = 1,
                  posterior=Dirichlet,
                  prior=None,
                  transform=lambda x: x,
@@ -679,9 +688,13 @@ class BoundedParameter(Parameter):
                  transform=None,
                  initializer={'loc': xavier, 'scale': scale_xavier},
                  var_transform={'loc': lambda x: x, 'scale': O.softplus},
-                 min=0.0,
-                 max=1.0,
+                 min: float = 0.0,
+                 max: float = 1.0,
                  name='BoundedParameter'):
+
+        # Check bounds
+        if min > max:
+            raise ValueError('min is larger than max')
 
         # Create the transform based on the bounds
         if transform is None:

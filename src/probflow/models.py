@@ -98,7 +98,7 @@ class Model(BaseModel, Module):
                     log_likelihoods = self(x_data).log_prob(y_data)
                     kl_loss = self.kl_loss()
                     elbo_loss = kl_loss/N - tf.reduce_mean(log_likelihoods)
-                variables = self.trainable_variables()
+                variables = self.trainable_variables
                 gradients = tape.gradient(elbo_loss, variables)
                 optimizer.apply_gradients(zip(gradients, variables))
             return elbo_loss
