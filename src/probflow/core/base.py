@@ -43,33 +43,40 @@ class BaseDistribution(ABC):
     def prob(self, y):
         """Compute the probability of some data given this distribution"""
         if get_backend() == 'pytorch':
-            return self.__call__().log_prob(y).exp()
+            return self().log_prob(y).exp()
         else:
-            return self.__call__().prob(y)
+            return self().prob(y)
 
 
     def log_prob(self, y):
         """Compute the log probability of some data given this distribution"""
-        return self.__call__().log_prob(y)
+        return self().log_prob(y)
 
 
     def mean(self):
-        """Compute the mean of this distribution"""
-        return self.__call__().mean()
+        """Compute the mean of this distribution
+
+        Note that this uses the mode of distributions for which the mean
+        is undefined (for example, a categorical distribution)"""
+        try:
+            return self().mean()
+        except NotImplementedError:
+            return self().mode()
+
 
 
     def sample(self, n=1):
         """Generate a random sample from this distribution"""
         if get_backend() == 'pytorch':
-            if isinstance(n, int) and n > 1:
-                return self.__call__().rsample()
+            if isinstance(n, int) and n == 1:
+                return self().rsample()
             else:
-                return self.__call__().rsample(n)
+                return self().rsample(n)
         else:
-            if isinstance(n, int) and n > 1:
-                return self.__call__().sample()
+            if isinstance(n, int) and n == 1:
+                return self().sample()
             else:
-                return self.__call__().sample(n)
+                return self().sample(n)
 
 
 
