@@ -238,3 +238,15 @@ def gather(vals, inds, axis=0):
     else:
         import tensorflow as tf
         return tf.gather(vals, inds, axis=axis)
+
+
+def additive_logistic_transform(vals):
+    """The additive logistic transformation"""
+    if get_backend() == 'pytorch':
+        import torch
+        raise NotImplementedError
+    else:
+        import tensorflow as tf
+        ones_shape = tf.concat([vals.shape[:-1], [1]], axis=-1)
+        exp_vals = tf.concat([tf.exp(vals), tf.ones(ones_shape)], axis=-1)
+        return exp_vals/tf.reduce_sum(exp_vals, axis=-1, keepdims=True)

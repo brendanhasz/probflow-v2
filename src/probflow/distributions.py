@@ -55,11 +55,11 @@ def _ensure_tensor_like(obj, name):
     """Determine whether an object can be cast to a Tensor"""
     if get_backend() == 'pytorch':
         import torch
-        tensor_type = torch.Tensor
+        tensor_types = (torch.Tensor)
     else:
         import tensorflow as tf
-        tensor_type = tf.Tensor
-    if not isinstance(obj, (int, float, np.ndarray, list, tensor_type)):
+        tensor_types = (tf.Tensor, tf.Variable)
+    if not isinstance(obj, (int, float, np.ndarray, list)+tensor_types):
         raise TypeError(name+' must be Tensor-like')
 
 

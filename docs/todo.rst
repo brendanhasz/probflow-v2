@@ -17,6 +17,8 @@ Backlog
 * Model evaluation methods
 * Tests for those
 * Bayes estimate / decision methods
+* Different plotting methods for different types of dists (both for Parameter
+  priors/posteriors and predictive distribution plots)
 * Convolutional modules
 
 
