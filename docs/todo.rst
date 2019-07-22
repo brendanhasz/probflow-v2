@@ -16,6 +16,7 @@ Backlog
 * Docs
 * Model evaluation methods
 * Tests for those
+* Make Module.trainable_variables return 
 * Bayes estimate / decision methods
 * Different plotting methods for different types of dists (both for Parameter
   priors/posteriors and predictive distribution plots)

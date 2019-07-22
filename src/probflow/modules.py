@@ -30,6 +30,8 @@ import probflow.core.ops as O
 from probflow.core.base import BaseModule
 from probflow.core.base import BaseParameter
 from probflow.core.base import BaseDistribution
+from probflow.distributions import Deterministic
+from probflow.distributions import Normal
 from probflow.parameters import Parameter
 from probflow.utils.initializers import xavier
 from probflow.utils.initializers import scale_xavier
@@ -41,27 +43,35 @@ class Module(BaseModule):
 
     TODO
 
+    Attributes
+    ----------
+    parameters : List[Parameter]
+        List of |Parameters| used in this |Module| and its sub-Modules
+    trainable_variables : List[Tensor]
+        List of raw variable objects from the backend used in this |Module|
+        and its sub-Modules
+
+
     Methods
     -------
     __init__ (abstract method)
     __call__ (abstract method)
-    parameters
     kl_loss
 
     """
 
     def _params(self, obj):
         """Recursively search for |Parameters| contained within an object"""
-            if isinstance(obj, BaseParameter):
-                return [obj]
-            elif isinstance(obj, BaseModule):
-                return obj.parameters()
-            elif isinstance(obj, list):
-                return self._list_params(obj)
-            elif isinstance(obj, dict):
-                return self._dict_params(obj)
-            else:
-                return []
+        if isinstance(obj, BaseParameter):
+            return [obj]
+        elif isinstance(obj, BaseModule):
+            return obj.parameters
+        elif isinstance(obj, list):
+            return self._list_params(obj)
+        elif isinstance(obj, dict):
+            return self._dict_params(obj)
+        else:
+            return []
 
 
     def _list_params(self, the_list):
@@ -74,21 +84,25 @@ class Module(BaseModule):
         return [p for _, e in the_dict.items() for p in self._params(e)]
 
 
+    @property
     def parameters(self):
         """Get a list of |Parameters| in this |Module| and its sub-Modules."""
         return [p for _, a in vars(self).items() for p in self._params(a)]
 
 
+    @property
     def trainable_variables(self):
         """Get a list of trainable backend variables within this |Module|"""
-        return [v for p in self.parameters() for v in p.trainable_variables()]
+        return [v for p in self.parameters for v in p.trainable_variables]
+        # TODO: look for variables NOT in parameters too
+        # so users can mix-n-match tf.Variables and pf.Parameters in modules 
 
 
     def kl_loss(self):
         """Compute the sum of the Kullback-Leibler divergences between
         priors and their variational posteriors for all |Parameters| in this
         |Module| and its sub-Modules."""
-        return O.sum([p.kl_loss for p in self.parameters()])
+        return O.sum([p.kl_loss() for p in self.parameters])
 
 
 
@@ -135,6 +149,7 @@ class Dense(Module):
     def __call__(self, x):
         """Perform the forward pass"""
         return x @ self.weights() + self.bias()
+        # TODO: use flipout if settings.flipout
 
 
 
