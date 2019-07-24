@@ -27,7 +27,7 @@ __all__ = [
 
 
 
-from typing import Union, List, Dict, Callable
+from typing import Union, List, Dict, Callable, Type
 
 import probflow.core.ops as O
 from probflow.core.settings import get_flipout
@@ -134,6 +134,8 @@ class Dense(Module):
             raise ValueError('d_out must be >0')
 
         # Create the parameters
+        self.d_in = d_in
+        self.d_out = d_out
         self.weights = Parameter(shape=[d_in, d_out], name=name+'_weights')
         self.bias = Parameter(shape=[1, d_out], name=name+'_bias')
 
