@@ -26,10 +26,13 @@ __all__ = [
 ]
 
 
+
+from typing import Union, List, Dict, Callable
+
 import probflow.core.ops as O
-from probflow.core.base import BaseModule
-from probflow.core.base import BaseParameter
-from probflow.core.base import BaseDistribution
+from probflow.core.settings import get_flipout
+from probflow.core.settings import get_backend
+from probflow.core.base import *
 from probflow.distributions import Deterministic
 from probflow.distributions import Normal
 from probflow.parameters import Parameter
@@ -74,12 +77,12 @@ class Module(BaseModule):
             return []
 
 
-    def _list_params(self, the_list):
+    def _list_params(self, the_list: List):
         """Recursively search for |Parameters| contained in a list"""
         return [p for e in the_list for p in self._params(e)]
 
 
-    def _dict_params(self, the_dict):
+    def _dict_params(self, the_dict: Dict):
         """Recursively search for |Parameters| contained in a dict"""
         return [p for _, e in the_dict.items() for p in self._params(e)]
 
@@ -117,39 +120,59 @@ class Dense(Module):
         Number of input dimensions.
     d_out : int
         Number of output dimensions (number of "units").
-    bias : bool
-        Whether to include a bias
     name : str
         Name of this layer
     """
 
 
-    def __init__(self, d_in, d_out, bias=True, name='Dense'):
+    def __init__(self, d_in: int, d_out: int, name: str = 'Dense'):
 
         # Check types
-        if not isinstance(d_in, int):
-            raise TypeError('d_in must be an int')
         if d_in < 1:
             raise ValueError('d_in must be >0')
-        if not isinstance(d_out, int):
-            raise TypeError('d_out must be an int')
         if d_out < 1:
             raise ValueError('d_out must be >0')
-        if not isinstance(bias, bool):
-            raise TypeError('bias must be True or False')
 
         # Create the parameters
-        self.weights = Parameter(shape=[d_in, d_out])
-        if bias:
-            self.bias = Parameter(shape=[1, d_out])
-        else:
-            self.bias = lambda x: 0
+        self.weights = Parameter(shape=[d_in, d_out], name=name+'_weights')
+        self.bias = Parameter(shape=[1, d_out], name=name+'_bias')
 
 
     def __call__(self, x):
         """Perform the forward pass"""
-        return x @ self.weights() + self.bias()
-        # TODO: use flipout if settings.flipout
+
+        # Using the Flipout estimator
+        if get_flipout():
+        
+            # With PyTorch
+            if get_backend() == 'pytorch':
+                raise NotImplementedError
+
+            # With Tensorflow
+            else:
+
+                import tensorflow as tf
+                import tensorflow_probability as tfp
+
+                # Flipout-estimated weight samples
+                s = tfp.python.math.random_rademacher(tf.shape(x))
+                r = tfp.python.math.random_rademacher([x.shape[0],self.d_out])
+                norm_samples = tf.random.normal([self.d_in, self.d_out])
+                w_samples = self.weights.variables['scale'] * norm_samples
+                w_noise = r*((x*s) @ w_samples)
+                w_outputs = x @ self.weights.variables['loc'] + w_noise
+                
+                # Flipout-estimated bias samples
+                r = tfp.python.math.random_rademacher([x.shape[0],self.d_out])
+                norm_samples = tf.random.normal([self.d_out])
+                b_samples = self.bias.variables['scale'] * norm_samples
+                b_outputs = self.bias.variables['loc'] + r*b_samples
+                
+                return w_outputs + b_outputs
+        
+        # Without Flipout
+        else:
+            return x @ self.weights() + self.bias()
 
 
 
@@ -167,13 +190,7 @@ class Sequential(Module):
     """
 
 
-    def __init__(self, steps, name='Sequential'):
-
-        # Check types
-        if not isinstance(steps, list):
-            raise TypeError('steps must be a list')
-        if not all(callable(s) for s in steps):
-            raise TypeError('steps must be a list of callables')
+    def __init__(self, steps: List[Callable], name: str = 'Sequential'):
 
         # Store the list of steps
         self.steps = steps
@@ -294,13 +311,13 @@ class BatchNormalization(Module):
     """
 
     def __init__(self, 
-                 shape,
-                 weight_posterior=Deterministic,
-                 bias_posterior=Deterministic,
-                 weight_prior=Normal(0, 1),
-                 bias_prior=Normal(0, 1),
-                 weight_initializer={'loc': xavier},
-                 bias_initializer={'loc': xavier},
+                 shape: Union[int, List[int]],
+                 weight_posterior: Type[BaseDistribution] = Deterministic,
+                 bias_posterior: Type[BaseDistribution] = Deterministic,
+                 weight_prior: BaseDistribution = Normal(0, 1),
+                 bias_prior: BaseDistribution = Normal(0, 1),
+                 weight_initializer: Dict[str, Callable] = {'loc': xavier},
+                 bias_initializer: Dict[str, Callable] = {'loc': xavier},
                  name='BatchNormalization'):
 
         # Create the parameters
@@ -384,12 +401,12 @@ class Embedding(Module):
     """
 
     def __init__(self, 
-                 k,
-                 d,
-                 posterior=Deterministic,
-                 prior=Normal(0, 1),
-                 initializer={'loc': xavier},
-                 name='Embeddings'):
+                 k: int,
+                 d: int,
+                 posterior: BaseDistribution = Deterministic,
+                 prior: Type[BaseDistribution] = Normal(0, 1),
+                 initializer: Dict[str, Callable] = {'loc': xavier},
+                 name: str = 'Embeddings'):
 
         # Check types
         if not isinstance(k, int):

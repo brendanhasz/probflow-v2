@@ -12,7 +12,7 @@ tfd = tfp.distributions
 from probflow.core.settings import Sampling
 import probflow.core.ops as O
 from probflow.parameters import *
-from probflow.modules import Module
+from probflow.modules import *
 
 
 
@@ -127,7 +127,23 @@ def test_Module():
 
 def test_Dense():
     """Tests probflow.modules.Dense"""
-    pass
+
+    # Create the parameter
+    dense = Dense()
+
+    # Test MAP outputs are same
+    # TODO
+
+    # Test samples are different
+    # TODO
+
+    # parameters should return [weights, bias]
+    # TODO
+
+    # kl_loss should return sum of KL losses
+    # TODO
+
+    # test Flipout
     # TODO
 
 
