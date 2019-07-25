@@ -11,7 +11,6 @@ __all__ = [
     'BaseDistribution',
     'BaseParameter',
     'BaseModule',
-    'BaseModel',
     'BaseDataGenerator',
     'BaseCallback',
 ]
@@ -132,13 +131,6 @@ class BaseModule(ABC):
 
 
 
-class BaseModel(ABC):
-    """Abstract base class for ProbFlow Models"""
-    pass
-    # TODO: might not need BaseModel, if it's totally unused...
-
-
-
 class BaseDataGenerator(ABC):
     """Abstract base class for ProbFlow DataGenerators"""
 
@@ -200,26 +192,19 @@ class BaseDataGenerator(ABC):
 class BaseCallback(ABC):
     """Abstract base class for ProbFlow Callbacks"""
 
+
+    # Reference to the model
+    model = None
+
+
     @abstractmethod
     def __init__(self, *args):
         pass
 
 
     @abstractmethod
-    def on_epoch_begin(self):
-        """Will be called at the beginning of each training epoch"""
-        pass
-
-
-    @abstractmethod
     def on_epoch_end(self):
         """Will be called at the end of each training epoch"""
-        pass
-
-
-    @abstractmethod
-    def on_train_begin(self):
-        """Will be called at the beginning of training"""
         pass
 
 

@@ -10,11 +10,11 @@ are totally welcome!
 Backlog
 -------
 
-* Allow x and/or y to be none in DataGenerator
-* Tests for DataGenerator
+* Add default datatype to settings w/ set/get funcs
+* Make Parameters use that datatype
+* Make DataGenerator cast to that datatype
 * Model basics (fitting and sampling)
 * Tests
-* Get rid of BaseModel?
 * Docs
 * Model evaluation methods (ones to be used in readme)
 * Tests for those

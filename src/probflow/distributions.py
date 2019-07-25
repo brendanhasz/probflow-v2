@@ -11,11 +11,10 @@ Continuous Distributions
 
 * :class:`.Deterministic`
 * :class:`.Normal`
-* :class:`.HalfNormal`
 * :class:`.StudentT`
 * :class:`.Cauchy`
 * :class:`.Gamma`
-* :class:`.InvGamma`
+* :class:`.InverseGamma`
 
 Discrete Distributions
 ----------------------
@@ -23,6 +22,7 @@ Discrete Distributions
 * :class:`.Bernoulli`
 * :class:`.Categorical`
 * :class:`.Poisson`
+* :class:`.Dirichlet`
 
 ----------
 
@@ -32,14 +32,14 @@ Discrete Distributions
 __all__ = [
     'Deterministic',
     'Normal',
-    'HalfNormal',
     'StudentT',
     'Cauchy',
     'Gamma',
-    'InvGamma',
+    'InverseGamma',
     'Bernoulli',
     'Categorical',
     'Poisson',
+    'Dirichlet',
 ]
 
 

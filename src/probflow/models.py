@@ -29,6 +29,7 @@ __all__ = [
 
 
 import warnings
+from typing import List
 
 import matplotlib.pyplot as plt
 
@@ -37,7 +38,6 @@ from probflow.core.settings import Sampling
 from probflow.core.base import BaseParameter
 from probflow.core.base import BaseDistribution
 from probflow.core.base import BaseModule
-from probflow.core.base import BaseModel
 from probflow.core.base import BaseDataGenerator
 from probflow.core.base import BaseCallback
 from probflow.modules import Module
@@ -47,9 +47,7 @@ from probflow.utils.metrics import get_metric_fn
 
 
 
-# TODO: might not need to inherit BaseModel, if it's totally unused...
-
-class Model(BaseModel, Module):
+class Model(Module):
     """Abstract base class for probflow models.
 
 
@@ -112,27 +110,36 @@ class Model(BaseModel, Module):
         Show a summary of the model and its parameters.
     """
 
-    def _train_step_tensorflow(self, N):
+
+    # Whether the model is currently training
+    _is_training = False
+
+
+    # The current learning rate
+    _learning_rate = None
+
+
+    def _train_step_tensorflow(self, n, flipout):
         """Get the training step function for TensorFlow"""
 
         import tensorflow as tf
 
         @tf.function
         def train_step(x_data, y_data):
-            with Sampling(n=n, flipout=flipout):
+            with Sampling(n=1, flipout=flipout):
                 with tf.GradientTape() as tape:
                     log_likelihoods = self(x_data).log_prob(y_data)
                     kl_loss = self.kl_loss()
-                    elbo_loss = kl_loss/N - tf.reduce_mean(log_likelihoods)
+                    elbo_loss = kl_loss/n - tf.reduce_mean(log_likelihoods)
                 variables = self.trainable_variables
                 gradients = tape.gradient(elbo_loss, variables)
-                optimizer.apply_gradients(zip(gradients, variables))
+                self._optimizer.apply_gradients(zip(gradients, variables))
             return elbo_loss
 
         return train_step
 
 
-    def _train_step_pytorch(self, N):
+    def _train_step_pytorch(self, n, flipout):
         """Get the training step function for PyTorch"""
         raise NotImplementedError
         # TODO
@@ -144,17 +151,18 @@ class Model(BaseModel, Module):
             batch_size: int = 128,
             epochs: int = 100,
             shuffle: bool = True,
-            validation_generator=None,
-            validation_split=None,
-            validation_shuffle: bool = True,
             optimizer=None,
             optimizer_kwargs: dict = {},
             learning_rate: float = 1e-3,
             flipout: bool = True,
-            verbose: bool = False):
+            callbacks: List[BaseCallback] = []):
         """Fit the model to data
 
         TODO
+
+        Creates the following attributes of the Model
+        * _optimizer
+        * _is_training
 
 
         Parameters
@@ -175,24 +183,6 @@ class Model(BaseModel, Module):
             Whether to shuffle the data each epoch.  Note that this is ignored
             if ``x`` is a |DataGenerator|.
             Default = ``True``
-        validation_generator : |None| or |DataGenerator|
-            A |DataGenerator| to generate the validation data. The default is
-            ``None``, i.e., do not evaluate the model on validation data.
-            Note that if both ``validation_generator`` and ``validation_split``
-            are set, ``validation_split`` will be ignored and the validation 
-            data will be generated from the ``validation_generator``.
-        validation_split : |None| or float between 0 and 1
-            Proportion of the data to use as validation data.
-            If ``None``, won't evaluate metrics on the validation data 
-            unless a ``validation_generator`` was passed.
-            Note that setting ``validation_split`` will not work if ``x`` is 
-            a |DataGenerator|.
-            Default = ``None``.
-        validation_shuffle : bool
-            Whether to shuffle which data is used for validation vs.training.
-            If ``False``, the last ``validation_split`` proportion of the
-            input data is used for validation.
-            Default = ``True``
         optimizer : |None| or a backend-specific optimizer
             What optimizer to use for optimizing the variational posterior
             distributions' variables.  When the backend is |TensorFlow|,
@@ -209,70 +199,60 @@ class Model(BaseModel, Module):
         flipout : bool
             Whether to use flipout during training where possible
             Default = True
-        verbose : bool
-            Whether to print progress during training.
-            Default = ``False``
         """
-
-        # Import backend
-        if get_backend() == 'pytorch':
-            import torch
-        else:
-            import tensorflow as tf
-
-        # Cannot split if passed a generator
-        if isinstance(x, DataGenerator) and validation_split is not None:
-            raise RuntimeError('Training data must be numpy/pandas arrays '
-                               'to use validation_split')
-
-        # Will use validation_generator over split
-        if validation_generator is not None and validation_split is not None:
-            warnings.warn('A validation_generator was passed, but '
-                          'validation_split was also set.  Ignoring '
-                          'validation_split and using the '
-                          'validation_generator.')
 
         # Create DataGenerators for training and validation data
         if isinstance(x, DataGenerator):
-            if validation_split is not None:
-                raise RuntimeError('Training data must be numpy/pandas '
-                                   'arrays to use validation_split')
-            else:
-                data = x
-                data_val = validation_generator
+            data = x
         else:
-            if validation_split is None:
-                data = DataGenerator(x, y, batch_size=batch_size, 
-                                     shuffle=shuffle)
-                data_val = None
-            else:
-                x_train, y_train, x_val, y_val = train_val_split(
-                    x, y, validation_split, validation_shuffle)
-                data = DataGenerator(x_train, y_train, batch_size=batch_size,
-                                     shuffle=shuffle)
-                data_val = DataGenerator(x_val, y_val, batch_size=batch_size,
-                                         shuffle=shuffle)
+            data = DataGenerator(x, y, batch_size=batch_size, shuffle=shuffle)
 
         # Use default optimizer if none specified
+        self._learning_rate = learning_rate
         if optimizer is None:
             if get_backend() == 'pytorch':
+                import torch
                 raise NotImplementedError
                 # TODO
             else:
-                optimizer = tf.keras.optimizers.Adam(lr=learning_rate,
-                                                     **optimizer_kwargs)
+                import tensorflow as tf
+                self._optimizer = tf.keras.optimizers.Adam(
+                    lambda: self._learning_rate, **optimizer_kwargs)
 
         # Create a function to perform one training step
         if get_backend() == 'pytorch':
-            train_step = self._train_step_pytorch(data.n_samples)
+            train_step = self._train_step_pytorch(data.n_samples, flipout)
         else:
-            train_step = self._train_step_tensorflow(data.n_samples)
+            train_step = self._train_step_tensorflow(data.n_samples, flipout)
 
-        # TODO!
-        # TODO: _learning_rate, update optimizer if changed
-        # TODO: _is_training, stop training if false
+        # Training has started
+        self._is_training = True
 
+        # Assign model param to callbacks
+        for c in callbacks:
+            c.model = self
 
+        # Fit the model!
+        for i in range(epochs):
+
+            # Stop training early?
+            if not self._is_training:
+                break
+
+            # Update gradients for each batch
+            for x_data, y_data in data:
+                train_step(x_data, y_data)
+
+            # Run callbacks at end of epoch
+            for c in callbacks:
+                c.on_epoch_end()
+
+        # Run callbacks at end of training
+        for c in callbacks:
+            c.on_train_end()
+
+        # No longer training
+        self._is_training = False
 
 
     def stop_training(self):

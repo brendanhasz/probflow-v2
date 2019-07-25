@@ -39,18 +39,8 @@ class Callback(BaseCallback):
         pass
 
 
-    def on_epoch_begin(self):
-        """Will be called at the beginning of each training epoch"""
-        pass
-
-
     def on_epoch_end(self):
         """Will be called at the end of each training epoch"""
-        pass
-
-
-    def on_train_begin(self):
-        """Will be called at the beginning of training"""
         pass
 
 
@@ -89,8 +79,8 @@ class LearningRateScheduler(Callback):
         self.epochs = 0
 
 
-    def on_epoch_begin(self):
-        """Set the learning rate at the beginning of each epoch"""
+    def on_epoch_end(self):
+        """Set the learning rate at the end of each epoch"""
         self.model.set_learning_rate(self.fn(self.epochs))
         self.epochs += 1
 
@@ -101,7 +91,7 @@ class MonitorMetric(Callback):
 
     """
 
-    def __init__(self, x, y=None, metric='log_prob')
+    def __init__(self, x, y=None, metric='log_prob', verbose=True)
 
         # Store metric
         self.metric_fn = get_metric_fn(metric)
@@ -118,6 +108,7 @@ class MonitorMetric(Callback):
         self.current_epoch = 0
         self.metrics = []
         self.epochs = []
+        self.verbose = verbose
 
 
     def on_epoch_end(self):
@@ -127,6 +118,11 @@ class MonitorMetric(Callback):
         self.current_epoch += 1
         self.metrics += [self.current_metric]
         self.epochs += [self.current_epoch]
+        if self.verbose:
+            print('Epoch {} \t{}: {}'.format(
+                  self.current_epoch,
+                  self.metric_fn.__name__,
+                  self.current_metric))
 
 
 
