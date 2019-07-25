@@ -244,6 +244,7 @@ class Model(Module):
                 train_step(x_data, y_data)
 
             # Run callbacks at end of epoch
+            data.on_epoch_end()
             for c in callbacks:
                 c.on_epoch_end()
 

@@ -42,7 +42,7 @@ def test_Model():
     # Fit the model
     x = np.random.randn(100)
     y = -x + 1
-    my_model.fit(x, y)
+    my_model.fit(x, y, batch_size=5, epochs=10)
 
 
 

@@ -56,7 +56,7 @@ from probflow.core.base import BaseParameter
 from probflow.core.base import BaseDistribution
 import probflow.core.ops as O
 from probflow.distributions import Normal
-from probflow.distributions import InverseGamma
+from probflow.distributions import Gamma
 from probflow.distributions import Categorical
 from probflow.distributions import Dirichlet
 from probflow.utils.plotting import plot_dist
@@ -478,7 +478,7 @@ class ScaleParameter(Parameter):
 
     .. math::
 
-        \sigma^2 \sim \text{InverseGamma}(\alpha, \beta)
+        \frac{1}{\sigma^2} \sim \text{Gamma}(\alpha, \beta)
 
     Then the variance is transformed into the standard deviation:
 
@@ -488,7 +488,7 @@ class ScaleParameter(Parameter):
 
     By default, an inverse gamma prior is used:
 
-        \sigma^2 \sim \text{InverseGamma}(5, 5)
+        \frac{1}{\sigma^2} \sim \text{Gamma}(5, 5)
 
 
     Parameters
@@ -529,13 +529,13 @@ class ScaleParameter(Parameter):
 
     def __init__(self,
                  shape=1,
-                 posterior=InverseGamma,
-                 prior=InverseGamma(5, 5),
-                 transform=lambda x: O.sqrt(x),
+                 posterior=Gamma,
+                 prior=Gamma(5, 5),
+                 transform=lambda x: O.sqrt(1.0/x),
                  initializer={'concentration': pos_xavier, 
-                              'scale': pos_xavier},
+                              'rate': pos_xavier},
                  var_transform={'concentration': O.softplus,
-                                'scale': O.softplus},
+                                'rate': O.softplus},
                  name='ScaleParameter'):
         super().__init__(shape=shape,
                          posterior=posterior,

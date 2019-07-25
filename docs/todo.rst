@@ -10,9 +10,6 @@ are totally welcome!
 Backlog
 -------
 
-* Add default datatype to settings w/ set/get funcs
-* Make Parameters use that datatype
-* Make DataGenerator cast to that datatype
 * Model basics (fitting and sampling)
 * Tests
 * Docs

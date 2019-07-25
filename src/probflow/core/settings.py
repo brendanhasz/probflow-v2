@@ -72,23 +72,20 @@ class _Settings():
         If |None|, will use MAP estimates.
     _FLIPOUT : bool
         Whether to use flipout where possible
+    _DATATYPE : tf.dtype or ???
+        Default datatype to use for tensors
     """
 
     def __init__(self):
         self._BACKEND = 'tensorflow'
         self._SAMPLES = None
         self._FLIPOUT = False
+        self._DATATYPE = None
 
 
 
 # Global ProbFlow settings
 __SETTINGS__ = _Settings()
-
-
-
-# TODO: default datatype
-
-# TODO: default device (for pytorch at least)
 
 
 
@@ -105,6 +102,38 @@ def set_backend(backend):
             raise ValueError('backend must be either tensorflow or pytorch')
     else:
         raise TypeError('backend must be a string')
+
+
+
+def get_datatype():
+    """Get the datatype to use for Tensors"""
+    if __SETTINGS__._DATATYPE is None:
+        if get_backend() == 'pytorch':
+            import torch
+            return torch.float32
+        else:
+            import tensorflow as tf
+            return tf.dtypes.float32
+    else:
+        return __SETTINGS__._DATATYPE
+
+
+
+def set_datatype(datatype):
+    """Set the datatype to use for Tensors"""
+    if get_backend() == 'pytorch':
+        if isinstance(datatype, torch.dtype):
+            __SETTINGS__._DATATYPE = datatype
+        else:
+            raise TypeError('datatype must be a torch.dtype')
+    else:
+        if isinstance(datatype, tf.dtypes.DType):
+            __SETTINGS__._DATATYPE = datatype
+        else:
+            raise TypeError('datatype must be a tf.dtypes.DType')
+
+
+# TODO: default device (for pytorch at least)
 
 
 

@@ -16,7 +16,47 @@ __all__ = [
 import numpy as np
 import pandas as pd
 
+from probflow.core.settings import get_backend
+from probflow.core.settings import get_datatype
 from probflow.core.base import BaseDataGenerator
+
+
+def cast_to_default_dtype(x):
+    """Cast a Tensor to the correct type.
+
+    Parameters
+    ----------
+    x : |ndarray|, |Series|, |DataFrame|, or Tensor
+
+    Returns
+    -------
+    x : Tensor
+        The input tensor casted to the default datatype
+    """
+
+    # Convert to numpy if pandas
+    if isinstance(x, (pd.Series, pd.DataFrame)):
+        x = x.values
+
+    # Convert to tensor from numpy
+    if get_backend() == 'pytorch' and x is not None:
+        x = torch.from_numpy(x)
+
+    # Cast to default datatype
+    if x is None:
+        return None
+    else:
+        if get_backend() == 'pytorch':
+            import torch
+            if get_datatype() is torch.float32:
+                x = x.float()
+            elif get_datatype() is torch.float64:
+                x = x.double()
+        else:
+            import tensorflow as tf
+            x = tf.dtypes.cast(x, get_datatype())
+
+    return x
 
 
 
@@ -159,6 +199,10 @@ class DataGenerator(BaseDataGenerator):
             x = self.y.iloc[ix]
         else:
             y = self.y[ix, ...]
+
+        # Cast to correct datatype
+        x = cast_to_default_dtype(x)
+        y = cast_to_default_dtype(y)
 
         # Return both x and y
         return x, y

@@ -15,6 +15,7 @@ Functions to initialize posterior distribution variables.
 import numpy as np
 
 from probflow.core.settings import get_backend
+from probflow.core.settings import get_datatype
 
 
 
@@ -26,10 +27,11 @@ def xavier(shape):
     if get_backend() == 'pytorch':
         # TODO: use truncated normal for torch
         import torch
-        return torch.randn(shape) * scale
+        return torch.randn(shape, dtype=get_datatype()) * scale
     else:
         import tensorflow as tf
-        return tf.random.truncated_normal(shape, mean=0.0, stddev=scale)
+        return tf.random.truncated_normal(shape, mean=0.0, stddev=scale,
+                                          dtype=get_datatype())
 
 
 
