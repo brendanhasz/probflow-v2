@@ -1,6 +1,6 @@
 # vim stuff
-.swp
-.vim
+*.swp
+*.vim
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
