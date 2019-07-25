@@ -36,6 +36,15 @@ Whether to use `Flipout <https://arxiv.org/abs/1803.04386>`_ where possible.
 * :func:`.set_flipout`
 
 
+Sampling context manager
+------------------------
+
+A context manager which controls how |Parameters| sample from their 
+variational distributions while inside the context manager.
+
+* :class:`.Sampling`
+
+
 """
 
 

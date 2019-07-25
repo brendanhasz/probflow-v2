@@ -84,15 +84,13 @@ class DataGenerator(BaseDataGenerator):
 
     """
 
-    def __init__(self, x, y, batch_size=128, shuffle=True):
-
-        # TODO: allow x and/or y to be None.  If so, set y=x and x=None
-        # ie you're doing a generative model
+    def __init__(self, x=None, y=None, batch_size=128, shuffle=True):
 
         # Check types
-        if not isinstance(x, (np.ndarray, pd.DataFrame, pd.Series)):
+        data_types = (np.ndarray, pd.DataFrame, pd.Series)
+        if x is not None and not isinstance(x, data_types):
             raise TypeError('x must be an ndarray, a DataFrame, or a Series')
-        if not isinstance(y, (np.ndarray, pd.DataFrame, pd.Series)):
+        if y is not None and not isinstance(y, data_types):
             raise TypeError('y must be an ndarray, a DataFrame, or a Series')
         if not isinstance(batch_size, int):
             raise TypeError('batch_size must be an int')
@@ -102,12 +100,23 @@ class DataGenerator(BaseDataGenerator):
             raise TypeError('shuffle must be True or False')
 
         # Check sizes are consistent
-        if x.shape[0] != y.shape[0]:
-            raise ValueError('x and y must contain same number of samples')
+        if x is not None and y is not None:
+            if x.shape[0] != y.shape[0]:
+                raise ValueError('x and y must contain same number of samples')
+
+        # Generative model?
+        if y is None:
+            y = x
+            x = None
+
+        # Batch size
+        if y.shape[0] < batch_size:
+            self._batch_size = y.shape[0]
+        else:
+            self._batch_size = batch_size
+        self.n_batches = int(np.ceil(y.shape[0]/batch_size))
 
         # Store references to data
-        self._batch_size = batch_size
-        self.n_batches = int(np.ceil(x.shape[0]/batch_size))
         self.x = x
         self.y = y
 
@@ -119,7 +128,7 @@ class DataGenerator(BaseDataGenerator):
     @property
     def n_samples(self):
         """Number of samples in the dataset"""
-        return self.x.shape[0]
+        return self.y.shape[0]
 
 
     @property
@@ -135,7 +144,9 @@ class DataGenerator(BaseDataGenerator):
         ix = self.ids[index*self.batch_size:(index+1)*self.batch_size]
 
         # Get x data
-        if isinstance(self.x, pd.DataFrame):
+        if self.x is None:
+            x = None
+        elif isinstance(self.x, pd.DataFrame):
             x = self.x.iloc[ix, :]
         elif isinstance(self.x, pd.Series):
             x = self.x.iloc[ix]

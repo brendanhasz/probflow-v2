@@ -151,8 +151,10 @@ class Parameter(BaseParameter):
 
     Methods
     -------
-    __init__
+    __init__(...)
+        Instantiate a Parameter array.
     __call__
+        Return a sample from the 
     kl_loss
     posterior_ci
     posterior_mean
@@ -235,6 +237,11 @@ class Parameter(BaseParameter):
         """Return a sample from or the MAP estimate of this parameter.
 
         TODO
+
+        Returns
+        -------
+        sample : Tensor
+            A sample from this Parameter's variational posterior distribution
         """
         n_samples = get_samples()
         if n_samples is None:
@@ -309,9 +316,11 @@ class Parameter(BaseParameter):
         ci : float
             Confidence interval for which to compute the upper and lower
             bounds.  Must be between 0 and 1.
+            Default = 0.95
         n : int
             Number of samples to draw from the posterior distributions for
             computing the confidence intervals
+            Default = 10,000
 
         Returns
         -------

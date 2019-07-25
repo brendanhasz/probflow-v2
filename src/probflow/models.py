@@ -43,6 +43,8 @@ from probflow.core.base import BaseCallback
 from probflow.modules import Module
 from probflow.utils.plotting import plot_dist
 from probflow.data import DataGenerator
+from probflow.utils.metrics import get_metric_fn
+
 
 
 # TODO: might not need to inherit BaseModel, if it's totally unused...
@@ -54,36 +56,60 @@ class Model(BaseModel, Module):
     TODO
 
 
+    Attributes
+    ----------
+    parameters : list
+        List of |Parameters| in the |Model|
+
+
     Methods
     -------
-
-    This class inherits several methods from :class:`.Module`:
-
-    * :func:`~probflow.models.Model.__init__` (abstract method)
-    * :func:`~probflow.models.Model.__call__` (abstract method)
-    * :func:`~probflow.models.Model.parameters`
-    * :func:`~probflow.models.Model.kl_loss`
-
-    and adds the following Model-specific methods:
-
-    * :func:`~probflow.models.Model.fit`
-    * :func:`~probflow.models.Model.stop_training`
-    * :func:`~probflow.models.Model.set_learning_rate`
-    * :func:`~probflow.models.Model.predictive_distribution`
-    * :func:`~probflow.models.Model.mean_distribution`
-    * :func:`~probflow.models.Model.predict`
-    * :func:`~probflow.models.Model.metric`
-    * :func:`~probflow.models.Model.posterior_mean`
-    * :func:`~probflow.models.Model.posterior_sample`
-    * :func:`~probflow.models.Model.posterior_plot`
-    * :func:`~probflow.models.Model.prior_sample`
-    * :func:`~probflow.models.Model.prior_plot`
-    * :func:`~probflow.models.Model.log_prob`
-    * :func:`~probflow.models.Model.log_prob_by`
-    * :func:`~probflow.models.Model.prob`
-    * :func:`~probflow.models.Model.prob_by`
-    * :func:`~probflow.models.Model.summary`
-
+    kl_loss()
+        The sum of the KL divergence between posteriors and priors for all
+        parameters in the model
+    fit(x, ...)
+        Fit the model to data
+    stop_training()
+        Stop the training of the model
+    set_learning_rate(lr)
+        Set the learning rate used by this model's optimizer
+    predictive_sample(x, n=1000)
+        Draw samples from the predictive distribution given x
+    aleatoric_sample(x, n=1000)
+        Draw samples of the model's estimate given x, including only
+        aleatoric uncertainty (uncertainty due to noise)
+    epistemic_sample(x, n=1000)
+        Draw samples of the model's estimate given x, including only
+        epistemic uncertainty (uncertainty due to uncertainty as to the
+        model's parameter values)
+    predict(x)
+        Predict dependent variable using the model
+    metric(x, y, metric='log_prob')
+        Compute a metric of model performance
+    posterior_mean(params=None)
+        Get the mean of the posterior distribution(s)
+    posterior_sample(params=None, n=10000)
+        Draw samples from parameter posteriors
+    posterior_ci(params=None, ci=0.95, n=10000)
+        Posterior confidence intervals
+    posterior_plot(...)
+        Plot posterior distributions of the model's parameters
+    prior_sample(params=None, n=10000)
+        Draw samples from parameter priors
+    prior_plot(...)  
+        Plot prior distributions of the model's parameters
+    log_prob(x, y, individually=True, distribution=False, n=1000)
+        Compute the log probability of ``y`` given the model
+    log_prob_by(x_by, x, y, bins=30, plot=True)
+        Log probability of observations ``y`` given the
+        model, as a function of independent variable(s) ``x_by``
+    prob(x, y, individually=True, distribution=False, n=1000)
+        Compute the probability of ``y`` given the model
+    prob_by(x_by, x, y, bins=30, plot=True)
+        Probability of observations ``y`` given the
+        model, as a function of independent variable(s) ``x_by``
+    summary
+        Show a summary of the model and its parameters.
     """
 
     def _train_step_tensorflow(self, N):
@@ -108,24 +134,25 @@ class Model(BaseModel, Module):
 
     def _train_step_pytorch(self, N):
         """Get the training step function for PyTorch"""
-        pass
+        raise NotImplementedError
         # TODO
 
 
     def fit(self,
             x,
             y=None,
-            batch_size=128,
-            epochs=100,
-            shuffle=True,
+            batch_size: int = 128,
+            epochs: int = 100,
+            shuffle: bool = True,
             validation_generator=None,
             validation_split=None,
-            validation_shuffle=True,
+            validation_shuffle: bool = True,
             optimizer=None,
-            optimizer_kwargs={},
-            learning_rate=1e-3,
-            verbose=False):
-        """Fit the model.
+            optimizer_kwargs: dict = {},
+            learning_rate: float = 1e-3,
+            flipout: bool = True,
+            verbose: bool = False):
+        """Fit the model to data
 
         TODO
 
@@ -179,6 +206,9 @@ class Model(BaseModel, Module):
             Note that the learning rate can be updated during training using
             the set_learning_rate method.
             Default = ``1e-3``
+        flipout : bool
+            Whether to use flipout during training where possible
+            Default = True
         verbose : bool
             Whether to print progress during training.
             Default = ``False``
@@ -246,31 +276,20 @@ class Model(BaseModel, Module):
 
 
     def stop_training(self):
-        """Stop the training loop.
-
-        TODO
-        """
+        """Stop the training of the model"""
         self._is_training = False
 
 
-
     def set_learning_rate(self, lr):
-        """Set the learning rate used for this model's optimizer.
-
-        TODO
-        """
-
-        # Check type
+        """Set the learning rate used by this model's optimizer"""
         if not isinstance(lr, float):
             raise ValueError('lr must be a float')
-
-        # Set the learning rate
-        self._learning_rate = lr
-
+        else:
+            self._learning_rate = lr
 
 
-    def predictive_distribution(self, x, n=1000):
-        """Draw samples from the model given x.
+    def predictive_sample(self, x, n=1000):
+        """Draw samples from the predictive distribution given x
 
         TODO: Docs...
 
@@ -290,12 +309,14 @@ class Model(BaseModel, Module):
             Samples from the predictive distribution.  Size
             (num_samples,x.shape[0],y.shape[0],...,y.shape[-1])        
         """
-        pass
-        # TODO
+        with Sampling(n=n, flipout=False):
+            samples = self(x).sample()
+        return samples.numpy()
 
 
-    def mean_distribution(self, x, n=1000):
-        """Draw samples of the model's mean estimate given x.
+    def aleatoric_sample(self, x, n=1000):
+        """Draw samples of the model's estimate given x, including only
+        aleatoric uncertainty (uncertainty due to noise)
 
         TODO: Docs...
 
@@ -315,14 +336,42 @@ class Model(BaseModel, Module):
             Samples from the predicted mean distribution.  Size
             (num_samples,x.shape[0],y.shape[0],...,y.shape[-1])        
         """
-        pass
-        # TODO
+        samples = self(x).sample(n=n)
+        return samples.numpy()
 
 
-    def predict(self, x, method='map'):
+    def epistemic_sample(self, x, n=1000):
+        """Draw samples of the model's estimate given x, including only
+        epistemic uncertainty (uncertainty due to uncertainty as to the
+        model's parameter values)
+
+        TODO: Docs...
+
+
+        Parameters
+        ----------
+        x : |ndarray| or |DataFrame| or |Series| or |Tensor|
+            Independent variable values of the dataset to evaluate (aka the 
+            "features"). 
+        n : int
+            Number of samples to draw from the model.
+
+
+        Returns
+        -------
+        |ndarray|
+            Samples from the predicted mean distribution.  Size
+            (num_samples,x.shape[0],y.shape[0],...,y.shape[-1])        
+        """
+        with Sampling(n=n, flipout=False):
+            samples = self(x).mean()
+        return samples.numpy()
+
+
+    def predict(self, x):
         """Predict dependent variable using the model
 
-        TODO...
+        TODO... using maximum a posteriori param estimates etc
 
 
         Parameters
@@ -330,11 +379,6 @@ class Model(BaseModel, Module):
         x : |ndarray| or |DataFrame| or |Series| or |Tensor|
             Independent variable values of the dataset to evaluate (aka the 
             "features").  
-        method : 'map' or callable
-            Whether to use maximum a posteriori estimation (``method='map'``),
-            or to make predictions with some function of the predictive 
-            distribution.  For example, to use the mean of the predictive
-            distribution as the prediction, set ``method=np.mean``.
 
 
         Returns
@@ -349,13 +393,11 @@ class Model(BaseModel, Module):
         TODO: Docs...
 
         """
-        pass
-        # TODO
-
+        return self(x).mean().numpy()
 
 
     def metric(self, x, y=None, metric='log_prob'):
-        """Compute a metric of model performance.
+        """Compute a metric of model performance
 
         TODO: docs
 
@@ -403,20 +445,27 @@ class Model(BaseModel, Module):
         -------
         TODO
         """
-        pass
-        # TODO
+
+        # Generative model?
+        if y is None:
+            y = x
+            x = None
+        
+        # Compute metric on predictions
+        metric_fn = get_metric_fn(metric)
+        return metric_fn(y, self(x)).numpy()
 
 
     def posterior_mean(self, params=None):
-        """Get the mean of the posterior distribution(s).
+        """Get the mean of the posterior distribution(s)
 
         TODO: Docs... params is a list of strings of params to plot
 
 
         Parameters
         ----------
-        params : list
-            List of parameter names to sample.  Each element should be a str.
+        params : str or List[str] or None
+            Parameter name(s) for which to compute the means.
             Default is to get the mean for all parameters in the model.
 
 
@@ -426,22 +475,30 @@ class Model(BaseModel, Module):
             Means of the parameter posterior distributions.  A dictionary
             where the keys contain the parameter names and the values contain
             |ndarray|s with the posterior means.  The |ndarray|s are the same
-            size as each parameter.
+            size as each parameter. Or just the |ndarray| if 
+            ``params`` was a str.
+
         """
-        pass
-        # TODO
+        if isinstance(params, str):
+            return [p.posterior_mean for p in self.parameters
+                    if p.name == params][0]
+        elif params is None:
+            return {p.name: p.posterior_mean for p in self.parameters}
+        else:
+            return {p.name: p.posterior_mean for p in self.parameters
+                    if p.name in params}
 
 
     def posterior_sample(self, params=None, n=10000):
-        """Draw samples from parameter posteriors.
+        """Draw samples from parameter posteriors
 
         TODO: Docs... params is a list of strings of params to plot
 
 
         Parameters
         ----------
-        params : list
-            List of parameter names to sample.  Each element should be a str.
+        params : str or List[str] or None
+            Parameter name(s) to sample. 
             Default is to get a sample for all parameters in the model.
         num_samples : int
             Number of samples to take from each posterior distribution.
@@ -453,11 +510,61 @@ class Model(BaseModel, Module):
         dict
             Samples from the parameter posterior distributions.  A dictionary
             where the keys contain the parameter names and the values contain
-            |ndarray|s with the posterior samples.  The |ndarray|s are of size
-            (``num_samples``, param.shape).
+            |ndarray|s with the posterior samples.  The |ndarrays| are of size
+            (``num_samples``, param.shape). Or just the |ndarray| if 
+            ``params`` was a str.
         """
-        pass
-        # TODO
+        if isinstance(params, str):
+            return [p.posterior_sample(n=n) for p in self.parameters
+                    if p.name == params][0]
+        elif params is None:
+            return {p.name: p.posterior_sample(n=n) for p in self.parameters}
+        else:
+            return {p.name: p.posterior_sample(n=n) for p in self.parameters
+                    if p.name in params}
+
+
+    def posterior_ci(self, params=None, ci=0.95, n=10000):
+        """Posterior confidence intervals
+
+        TODO: Docs... params is a list of strings of params to plot
+
+
+        Parameters
+        ----------
+        params : str or List[str] or None
+            Parameter name(s) to sample. 
+            Default is to get the confidence intervals for all parameters in 
+            the model.
+        ci : float
+            Confidence interval for which to compute the upper and lower
+            bounds.  Must be between 0 and 1.
+            Default = 0.95
+        n : int
+            Number of samples to draw from the posterior distributions for
+            computing the confidence intervals
+            Default = 10,000
+
+
+        Returns
+        -------
+        dict
+            Samples from the parameter posterior distributions.  A dictionary
+            where the keys contain the parameter names and the values contain
+            |ndarray|s with the posterior samples.  The |ndarray|s are of size
+            (``num_samples``, param.shape).  Or just the |ndarray| if 
+            ``params`` was a str.
+
+        """
+        if isinstance(params, str):
+            return [p.posterior_ci(ci=ci, n=n) 
+                    for p in self.parameters if p.name == params][0]
+        elif params is None:
+            return {p.name: p.posterior_ci(ci=ci, n=n) 
+                    for p in self.parameters}
+        else:
+            return {p.name: p.posterior_ci(ci=ci, n=n) 
+                    for p in self.parameters if p.name in params}
 
 
     def posterior_plot(self,
@@ -470,7 +577,7 @@ class Model(BaseModel, Module):
                        bw=0.075,
                        color=None,
                        alpha=0.4):
-        """Plot posterior distributions of the model's parameters.
+        """Plot posterior distributions of the model's parameters
 
         TODO: Docs... params is a list of strings of params to plot
 
@@ -512,7 +619,7 @@ class Model(BaseModel, Module):
 
 
     def prior_sample(self, params=None, n=10000):
-        """Draw samples from parameter priors.
+        """Draw samples from parameter priors
 
         TODO: Docs... params is a list of strings of params to plot
 
@@ -535,8 +642,14 @@ class Model(BaseModel, Module):
             |ndarray|s with the prior samples.  The |ndarray|s are of size
             (``n``,param.shape).
         """
-        pass
-        # TODO
+        if isinstance(params, str):
+            return [p.prior_sample(n=n) 
+                    for p in self.parameters if p.name == params][0]
+        elif params is None:
+            return {p.name: p.prior_sample(n=n) for p in self.parameters}
+        else:
+            return {p.name: p.prior_sample(n=n) for p in self.parameters
+                    if p.name in params}
 
 
     def prior_plot(self,
@@ -549,7 +662,7 @@ class Model(BaseModel, Module):
                    bw=0.075,
                    color=None,
                    alpha=0.4):
-        """Plot prior distributions of the model's parameters.
+        """Plot prior distributions of the model's parameters
 
         TODO: Docs... params is a list of strings of params to plot
 
@@ -592,11 +705,11 @@ class Model(BaseModel, Module):
 
     def log_prob(self, 
                  x, 
-                 y,
+                 y=None,
                  individually=True,
                  distribution=False,
                  n=1000):
-        """Compute the log probability of `y` given `x` and the model.
+        """Compute the log probability of `y` given the model
 
         TODO: Docs...
 
@@ -641,8 +754,8 @@ class Model(BaseModel, Module):
                     y=None,
                     bins=30,
                     plot=True):
-        """Log probability of observations ``y`` given ``x`` and the
-        model as a function of independent variable(s) ``x_by``.
+        """Log probability of observations ``y`` given the
+        model, as a function of independent variable(s) ``x_by``
 
         TODO: docs...
 
@@ -681,7 +794,7 @@ class Model(BaseModel, Module):
              individually=True,
              distribution=False,
              n=1000):
-        """Compute the probability of `y` given `x` and the model.
+        """Compute the probability of ``y`` given the model
 
         TODO: Docs...
 
@@ -726,8 +839,8 @@ class Model(BaseModel, Module):
                 y=None,
                 bins=30,
                 plot=True):
-        """Probability of observations ``y`` given ``x`` and the
-        model as a function of independent variable(s) ``x_by``.
+        """Probability of observations ``y`` given the
+        model, as a function of independent variable(s) ``x_by``
 
         TODO: docs...
 
@@ -761,7 +874,7 @@ class Model(BaseModel, Module):
 
 
     def summary(self):
-        """Print a summary of the model and its parameters.
+        """Show a summary of the model and its parameters.
 
         TODO
 
@@ -1413,6 +1526,7 @@ class DiscreteModel(ContinuousModel):
         else:
             #plot_dist(pred_dist, xlabel='Dependent Variable', style=style, 
             #          bins=bins, ci=ci, bw=bw, alpha=alpha, color=color)
+            pass
 
 
     def r_squared(self, *args, **kwargs):
@@ -1580,3 +1694,18 @@ class CategoricalModel(Model):
         """
         #TODO
         pass
+    
+
+
+def save_model(model):
+    """Save a model to file"""
+    pass 
+    # TODO
+
+
+
+def load_model(model):
+    """Load a model from file"""
+    pass 
+    # TODO
+
