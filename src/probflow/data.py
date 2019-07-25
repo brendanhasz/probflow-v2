@@ -114,7 +114,6 @@ class DataGenerator(BaseDataGenerator):
             self._batch_size = y.shape[0]
         else:
             self._batch_size = batch_size
-        self.n_batches = int(np.ceil(y.shape[0]/batch_size))
 
         # Store references to data
         self.x = x
@@ -168,6 +167,6 @@ class DataGenerator(BaseDataGenerator):
     def on_epoch_end(self):
         """Shuffle data each epoch"""
         if self.shuffle:
-            self.ids = np.random.permutation(self.n)
+            self.ids = np.random.permutation(self.n_samples)
         else:
-            self.ids = np.arange(self.n, dtype=np.uint64)
+            self.ids = np.arange(self.n_samples, dtype=np.uint64)

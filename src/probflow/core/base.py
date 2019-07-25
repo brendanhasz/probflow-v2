@@ -142,6 +142,11 @@ class BaseModel(ABC):
 class BaseDataGenerator(ABC):
     """Abstract base class for ProbFlow DataGenerators"""
 
+
+    # The current batch
+    _batch = -1
+
+
     @abstractmethod
     def __init__(self, *args):
         pass
@@ -161,15 +166,29 @@ class BaseDataGenerator(ABC):
         pass
 
 
+    def __len__(self):
+        """Number of batches per epoch"""
+        return int(ceil(self.n_samples/self.batch_size))
+
+
     @abstractmethod
     def __getitem__(self, index):
         """Generate one batch of data"""
         pass
 
 
-    def __len__(self):
-        """Number of batches per epoch"""
-        return int(ceil(self.n_samples/self.batch_size))
+    def __iter__(self):
+        """Get an iterator over batches"""
+        return self
+
+    
+    def __next__(self):
+        """Get the next batch"""
+        self._batch += 1
+        if self._batch < len(self):
+            return self[self._batch]
+        else:
+            raise StopIteration()
 
 
     def on_epoch_end(self):
