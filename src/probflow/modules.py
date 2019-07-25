@@ -327,17 +327,19 @@ class BatchNormalization(Module):
                                 posterior=weight_posterior,
                                 prior=weight_prior,
                                 initializer=weight_initializer,
-                                name=name+'weight')
+                                name=name+'_weight')
         self.bias = Parameter(shape=shape,
                               posterior=bias_posterior,
                               prior=bias_prior,
                               initializer=bias_initializer,
-                              name=name+'bias')
+                              name=name+'_bias')
 
 
     def __call__(self, x):
         """Perform the forward pass"""
-        return self.weight()*(x-O.mean(x, axis=0))/O.std(x, axis=0)+self.bias()
+        mean = O.mean(x, axis=0)
+        std = O.std(x, axis=0)
+        return self.weight()*(x-mean)/std+self.bias()
 
 
 
@@ -411,12 +413,8 @@ class Embedding(Module):
                  name: str = 'Embeddings'):
 
         # Check types
-        if not isinstance(k, int):
-            raise TypeError('k must be an int')
         if k < 1:
             raise ValueError('k must be >0')
-        if not isinstance(d, int):
-            raise TypeError('d must be an int')
         if d < 1:
             raise ValueError('d must be >0')
 
@@ -431,3 +429,4 @@ class Embedding(Module):
     def __call__(self, x):
         """Perform the forward pass"""
         return O.gather(self.embeddings(), x)
+

@@ -128,7 +128,13 @@ def test_Module():
 def test_Dense():
     """Tests probflow.modules.Dense"""
 
-    # Create the parameter
+    # Should error w/ int < 1
+    with pytest.raises(ValueError):
+        dense = Dense(0, 1)
+    with pytest.raises(ValueError):
+        dense = Dense(5, -1)
+
+    # Create the module
     dense = Dense(5, 1)
 
     # Test MAP outputs are same
@@ -180,19 +186,152 @@ def test_Dense():
 
 def test_Sequential():
     """Tests probflow.modules.Sequential"""
-    pass
-    # TODO
+
+    # Create the module
+    seq = Sequential([
+        Dense(5, 10),
+        tf.nn.relu,
+        Dense(10, 3),
+        tf.nn.relu,
+        Dense(3, 1),
+    ])
+
+    # Steps should be list
+    assert isinstance(seq.steps, list)
+    assert len(seq.steps) == 5
+
+    # Test MAP outputs are the same
+    x = tf.random.normal([4, 5])
+    samples1 = seq(x)
+    samples2 = seq(x)
+    assert np.all(samples1.numpy() == samples2.numpy())
+    assert samples1.ndim == 2
+    assert samples1.shape[0] == 4
+    assert samples1.shape[1] == 1
+
+    # Test samples are different
+    with Sampling():
+        samples1 = seq(x)
+        samples2 = seq(x)
+    assert np.all(samples1.numpy() != samples2.numpy())
+    assert samples1.ndim == 2
+    assert samples1.shape[0] == 4
+    assert samples1.shape[1] == 1
+
+    # parameters should return list of all parameters
+    param_list = seq.parameters
+    assert isinstance(param_list, list)
+    assert len(param_list) == 6
+    assert all(isinstance(p, Parameter) for p in param_list)
+    param_names = [p.name for p in seq.parameters]
+    assert 'Dense_weights' in param_names
+    assert 'Dense_bias' in param_names
+    param_shapes = [p.shape for p in seq.parameters]
+    assert [5, 10] in param_shapes
+    assert [1, 10] in param_shapes
+    assert [10, 3] in param_shapes
+    assert [1, 3] in param_shapes
+    assert [3, 1] in param_shapes
+    assert [1, 1] in param_shapes
+
+    # kl_loss should return sum of KL losses
+    kl_loss = seq.kl_loss()
+    assert isinstance(kl_loss, tf.Tensor)
+    assert kl_loss.ndim == 0
 
 
 
 def test_BatchNormalization():
     """Tests probflow.modules.BatchNormalization"""
-    pass
-    # TODO
+
+    # Create the module
+    bn = BatchNormalization([5])
+
+    # Test MAP outputs are the same
+    x = tf.random.normal([4, 5])
+    samples1 = bn(x)
+    samples2 = bn(x)
+    assert np.all(samples1.numpy() == samples2.numpy())
+    assert samples1.ndim == 2
+    assert samples1.shape[0] == 4
+    assert samples1.shape[1] == 5
+
+    # Samples should actually be the same b/c using deterministic posterior
+    with Sampling():
+        samples1 = bn(x)
+        samples2 = bn(x)
+    assert np.all(samples1.numpy() == samples2.numpy())
+    assert samples1.ndim == 2
+    assert samples1.shape[0] == 4
+    assert samples1.shape[1] == 5
+
+    # parameters should return list of all parameters
+    param_list = bn.parameters
+    assert isinstance(param_list, list)
+    assert len(param_list) == 2
+    assert all(isinstance(p, Parameter) for p in param_list)
+    param_names = [p.name for p in bn.parameters]
+    assert 'BatchNormalization_weight' in param_names
+    assert 'BatchNormalization_bias' in param_names
+    param_shapes = [p.shape for p in bn.parameters]
+    assert [5] in param_shapes
+
+    # kl_loss should return sum of KL losses
+    kl_loss = bn.kl_loss()
+    assert isinstance(kl_loss, tf.Tensor)
+    assert kl_loss.ndim == 0
+
+    # Test it works w/ dense layer and sequential
+    seq = Sequential([
+        Dense(5, 10),
+        BatchNormalization(10),
+        tf.nn.relu,
+        Dense(10, 3),
+        BatchNormalization(3),
+        tf.nn.relu,
+        Dense(3, 1),
+    ])
+    assert len(seq.parameters) == 10
 
 
 
 def test_Embedding():
     """Tests probflow.modules.Embedding"""
-    pass
-    # TODO
+
+    # Should error w/ int < 1
+    with pytest.raises(ValueError):
+        emb = Embedding(0, 1)
+    with pytest.raises(ValueError):
+        emb = Embedding(5, -1)
+
+    # Create the module
+    emb = Embedding(10, 5)
+
+    # Check parameters
+    assert len(emb.parameters) == 1
+    assert emb.parameters[0].name == 'Embeddings'
+    assert emb.parameters[0].shape == [10, 5]
+
+    # Test MAP outputs are the same
+    x = tf.random.uniform([20], minval=0, maxval=9, dtype=tf.dtypes.int32)
+    samples1 = emb(x)
+    samples2 = emb(x)
+    assert np.all(samples1.numpy() == samples2.numpy())
+    assert samples1.ndim == 2
+    assert samples1.shape[0] == 20
+    assert samples1.shape[1] == 5
+
+    # Samples should actually be the same b/c using deterministic posterior
+    with Sampling():
+        samples1 = emb(x)
+        samples2 = emb(x)
+    assert np.all(samples1.numpy() == samples2.numpy())
+    assert samples1.ndim == 2
+    assert samples1.shape[0] == 20
+    assert samples1.shape[1] == 5
+
+    # kl_loss should return sum of KL losses
+    kl_loss = emb.kl_loss()
+    assert isinstance(kl_loss, tf.Tensor)
+    assert kl_loss.ndim == 0
+
