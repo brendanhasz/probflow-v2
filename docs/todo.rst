@@ -13,6 +13,8 @@ Backlog
 * Model basics (fitting and sampling)
 * Tests
 * Docs
+* Tests for metrics
+* Tests for callbacks
 * Model evaluation methods (ones to be used in readme)
 * Tests for those
 * README

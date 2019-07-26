@@ -118,7 +118,7 @@ def test_Parameter_1D():
     assert sample2.ndim == 1
     assert sample1.shape[0] == 5
     assert sample2.shape[0] == 5
-    assert np.all(sample1.numpy() == sample2.numpy())
+    assert np.all(sample1 == sample2)
 
     # posterior_sample should return samples
     sample1 = param.posterior_sample()
@@ -127,7 +127,7 @@ def test_Parameter_1D():
     assert sample2.ndim == 1
     assert sample1.shape[0] == 5
     assert sample2.shape[0] == 5
-    assert np.all(sample1.numpy() != sample2.numpy())
+    assert np.all(sample1 != sample2)
 
     # posterior_sample should be able to return multiple samples
     sample1 = param.posterior_sample(10)
@@ -138,7 +138,7 @@ def test_Parameter_1D():
     assert sample1.shape[1] == 5
     assert sample2.shape[0] == 10
     assert sample2.shape[1] == 5
-    assert np.all(sample1.numpy() != sample2.numpy())
+    assert np.all(sample1 != sample2)
 
     # prior_sample should still be 1D
     prior_sample = param.prior_sample()
@@ -169,7 +169,7 @@ def test_Parameter_2D():
     assert sample1.shape[1] == 4
     assert sample2.shape[0] == 5
     assert sample2.shape[1] == 4
-    assert np.all(sample1.numpy() == sample2.numpy())
+    assert np.all(sample1 == sample2)
 
     # posterior_sample should return samples
     sample1 = param.posterior_sample()
@@ -180,7 +180,7 @@ def test_Parameter_2D():
     assert sample1.shape[1] == 4
     assert sample2.shape[0] == 5
     assert sample2.shape[1] == 4
-    assert np.all(sample1.numpy() != sample2.numpy())
+    assert np.all(sample1 != sample2)
 
     # posterior_sample should be able to return multiple samples
     sample1 = param.posterior_sample(10)
@@ -193,7 +193,7 @@ def test_Parameter_2D():
     assert sample2.shape[0] == 10
     assert sample2.shape[1] == 5
     assert sample2.shape[2] == 4
-    assert np.all(sample1.numpy() != sample2.numpy())
+    assert np.all(sample1 != sample2)
 
     # prior_sample should still be 1D
     prior_sample = param.prior_sample()
@@ -248,11 +248,11 @@ def test_ScaleParameter():
     param = ScaleParameter()
 
     # All samples should be > 0
-    assert np.all(param.posterior_sample(n=1000).numpy() > 0)
+    assert np.all(param.posterior_sample(n=1000) > 0)
 
     # 1D ScaleParameter
     param = ScaleParameter(shape=5)
-    samples = param.posterior_sample(n=10).numpy()
+    samples = param.posterior_sample(n=10)
     assert samples.ndim == 2
     assert samples.shape[0] == 10
     assert samples.shape[1] == 5
@@ -260,7 +260,7 @@ def test_ScaleParameter():
 
     # 2D ScaleParameter
     param = ScaleParameter(shape=[5, 4])
-    samples = param.posterior_sample(n=10).numpy()
+    samples = param.posterior_sample(n=10)
     assert samples.ndim == 3
     assert samples.shape[0] == 10
     assert samples.shape[1] == 5
@@ -276,14 +276,14 @@ def test_CategoricalParameter():
     param = CategoricalParameter(k=3)
 
     # All samples should be 0, 1, or 2
-    samples = param.posterior_sample(n=100).numpy()
+    samples = param.posterior_sample(n=100)
     assert samples.ndim == 1
     assert samples.shape[0] == 100
     assert all(s in [0, 1, 2] for s in samples.tolist())
 
     # 1D parameter
     param = CategoricalParameter(k=3, shape=5)
-    samples = param.posterior_sample(n=100).numpy()
+    samples = param.posterior_sample(n=100)
     assert samples.ndim == 2
     assert samples.shape[0] == 100
     assert samples.shape[1] == 5
@@ -291,7 +291,7 @@ def test_CategoricalParameter():
 
     # 2D parameter
     param = CategoricalParameter(k=3, shape=[5, 4])
-    samples = param.posterior_sample(n=100).numpy()
+    samples = param.posterior_sample(n=100)
     assert samples.ndim == 3
     assert samples.shape[0] == 100
     assert samples.shape[1] == 5
@@ -307,7 +307,7 @@ def test_DirichletParameter():
     param = DirichletParameter(k=3)
 
     # All samples should be between 0 and 1
-    samples = param.posterior_sample(n=100).numpy()
+    samples = param.posterior_sample(n=100)
     assert samples.ndim == 2
     assert samples.shape[0] == 100
     assert samples.shape[1] == 3
@@ -315,7 +315,7 @@ def test_DirichletParameter():
 
     # 1D parameter
     param = DirichletParameter(k=3, shape=5)
-    samples = param.posterior_sample(n=100).numpy()
+    samples = param.posterior_sample(n=100)
     assert samples.ndim == 3
     assert samples.shape[0] == 100
     assert samples.shape[1] == 5
@@ -324,7 +324,7 @@ def test_DirichletParameter():
 
     # 2D parameter
     param = DirichletParameter(k=3, shape=[5, 4])
-    samples = param.posterior_sample(n=100).numpy()
+    samples = param.posterior_sample(n=100)
     assert samples.ndim == 4
     assert samples.shape[0] == 100
     assert samples.shape[1] == 5
@@ -341,7 +341,7 @@ def test_BoundedParameter():
     param = BoundedParameter()
 
     # All samples should be between 0 and 1
-    samples = param.posterior_sample(n=100).numpy()
+    samples = param.posterior_sample(n=100)
     assert samples.ndim == 2
     assert samples.shape[0] == 100
     assert samples.shape[1] == 1
@@ -349,7 +349,7 @@ def test_BoundedParameter():
 
     # 1D parameter
     param = BoundedParameter(shape=5)
-    samples = param.posterior_sample(n=100).numpy()
+    samples = param.posterior_sample(n=100)
     assert samples.ndim == 2
     assert samples.shape[0] == 100
     assert samples.shape[1] == 5
@@ -357,7 +357,7 @@ def test_BoundedParameter():
 
     # 2D parameter
     param = BoundedParameter(shape=[5, 4])
-    samples = param.posterior_sample(n=100).numpy()
+    samples = param.posterior_sample(n=100)
     assert samples.ndim == 3
     assert samples.shape[0] == 100
     assert samples.shape[1] == 5
@@ -373,7 +373,7 @@ def test_PositiveParameter():
     param = PositiveParameter()
 
     # All samples should be between 0 and 1
-    samples = param.posterior_sample(n=100).numpy()
+    samples = param.posterior_sample(n=100)
     assert samples.ndim == 2
     assert samples.shape[0] == 100
     assert samples.shape[1] == 1
@@ -381,7 +381,7 @@ def test_PositiveParameter():
 
     # 1D parameter
     param = PositiveParameter(shape=5)
-    samples = param.posterior_sample(n=100).numpy()
+    samples = param.posterior_sample(n=100)
     assert samples.ndim == 2
     assert samples.shape[0] == 100
     assert samples.shape[1] == 5
@@ -389,7 +389,7 @@ def test_PositiveParameter():
 
     # 2D parameter
     param = PositiveParameter(shape=[5, 4])
-    samples = param.posterior_sample(n=100).numpy()
+    samples = param.posterior_sample(n=100)
     assert samples.ndim == 3
     assert samples.shape[0] == 100
     assert samples.shape[1] == 5

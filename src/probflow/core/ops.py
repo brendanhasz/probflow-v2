@@ -76,6 +76,17 @@ def kl_divergence(P, Q):
 
 
 
+def expand_dims(val, axis):
+    """Add a singular dimension to a Tensor"""
+    if get_backend() == 'pytorch':
+        import torch
+        return torch.unsqueeze(val, axis)
+    else:
+        import tensorflow as tf
+        return tf.expand_dims(val, axis)
+
+
+
 def ones(shape):
     """Tensor full of ones."""
     if get_backend() == 'pytorch':

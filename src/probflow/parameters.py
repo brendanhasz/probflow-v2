@@ -264,7 +264,7 @@ class Parameter(BaseParameter):
 
         TODO
         """
-        return self()
+        return self().numpy()
 
 
     def posterior_sample(self, n: int = 1):
@@ -281,7 +281,7 @@ class Parameter(BaseParameter):
         TODO
         """
         with Sampling(n=n):
-            return self()
+            return self().numpy()
 
 
     def prior_sample(self, n: int = 1):
@@ -303,9 +303,9 @@ class Parameter(BaseParameter):
             ``(self.prior.shape)``.
         """
         if n==1:
-            return self.transform(self.prior.sample())
+            return self.transform(self.prior.sample()).numpy()
         else:
-            return self.transform(self.prior.sample(n))
+            return self.transform(self.prior.sample(n)).numpy()
 
 
     def posterior_ci(self, ci: float = 0.95, n: int = 10000):

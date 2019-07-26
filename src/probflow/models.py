@@ -40,6 +40,7 @@ from probflow.core.base import BaseDistribution
 from probflow.core.base import BaseModule
 from probflow.core.base import BaseDataGenerator
 from probflow.core.base import BaseCallback
+import probflow.core.ops as O
 from probflow.modules import Module
 from probflow.utils.plotting import plot_dist
 from probflow.data import DataGenerator
@@ -288,10 +289,10 @@ class Model(Module):
         -------
         |ndarray|
             Samples from the predictive distribution.  Size
-            (num_samples,x.shape[0],y.shape[0],...,y.shape[-1])        
+            (num_samples,x.shape[0],...)
         """
         with Sampling(n=n, flipout=False):
-            samples = self(x).sample()
+            samples = self(O.expand_dims(x, 0)).sample()
         return samples.numpy()
 
 
@@ -315,7 +316,7 @@ class Model(Module):
         -------
         |ndarray|
             Samples from the predicted mean distribution.  Size
-            (num_samples,x.shape[0],y.shape[0],...,y.shape[-1])        
+            (num_samples,x.shape[0],...)
         """
         samples = self(x).sample(n=n)
         return samples.numpy()
@@ -342,10 +343,10 @@ class Model(Module):
         -------
         |ndarray|
             Samples from the predicted mean distribution.  Size
-            (num_samples,x.shape[0],y.shape[0],...,y.shape[-1])        
+            (num_samples,x.shape[0],...)
         """
         with Sampling(n=n, flipout=False):
-            samples = self(x).mean()
+            samples = self(O.expand_dims(x, 0)).mean()
         return samples.numpy()
 
 
@@ -461,12 +462,12 @@ class Model(Module):
 
         """
         if isinstance(params, str):
-            return [p.posterior_mean for p in self.parameters
+            return [p.posterior_mean() for p in self.parameters
                     if p.name == params][0]
         elif params is None:
-            return {p.name: p.posterior_mean for p in self.parameters}
+            return {p.name: p.posterior_mean() for p in self.parameters}
         else:
-            return {p.name: p.posterior_mean for p in self.parameters
+            return {p.name: p.posterior_mean() for p in self.parameters
                     if p.name in params}
 
 
@@ -530,12 +531,12 @@ class Model(Module):
         Returns
         -------
         dict
-            Samples from the parameter posterior distributions.  A dictionary
+            Confidence intervals of the parameter posterior distributions.  
+            A dictionary
             where the keys contain the parameter names and the values contain
-            |ndarray|s with the posterior samples.  The |ndarray|s are of size
-            (``num_samples``, param.shape).  Or just the |ndarray| if 
-            ``params`` was a str.
-
+            tuples.  The first element of each tuple is the lower bound, and 
+            the second element is the upper bound.
+            Or just a single tuple if params was a str
         """
         if isinstance(params, str):
             return [p.posterior_ci(ci=ci, n=n) 

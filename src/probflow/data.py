@@ -21,101 +21,6 @@ from probflow.core.settings import get_datatype
 from probflow.core.base import BaseDataGenerator
 
 
-def cast_to_default_dtype(x):
-    """Cast a Tensor to the correct type.
-
-    Parameters
-    ----------
-    x : |ndarray|, |Series|, |DataFrame|, or Tensor
-
-    Returns
-    -------
-    x : Tensor
-        The input tensor casted to the default datatype
-    """
-
-    # Convert to numpy if pandas
-    if isinstance(x, (pd.Series, pd.DataFrame)):
-        x = x.values
-
-    # Convert to tensor from numpy
-    if get_backend() == 'pytorch' and x is not None:
-        x = torch.from_numpy(x)
-
-    # Cast to default datatype
-    if x is None:
-        return None
-    else:
-        if get_backend() == 'pytorch':
-            import torch
-            if get_datatype() is torch.float32:
-                x = x.float()
-            elif get_datatype() is torch.float64:
-                x = x.double()
-        else:
-            import tensorflow as tf
-            x = tf.dtypes.cast(x, get_datatype())
-
-    return x
-
-
-
-def train_val_split(x, y, val_split, val_shuffle):
-    """Split data into training and validation data
-
-    Parameters
-    ----------
-    x : |ndarray|, |DataFrame|, or |Series|
-        Independent variable values.
-    y : |ndarray|, |DataFrame|, or |Series|
-        Dependent variable values.
-    val_split : float between 0 and 1
-        Proportion of the data to use as validation data.
-    val_shuffle : bool
-        Whether to shuffle which data is used for validation.  If False,
-        the last ``val_split`` proportion of the input data is used
-        for validation.
-
-    Returns
-    -------
-    (N, x_train, y_train, x_val, y_val)
-
-        * N: number of training samples
-        * x_train: independent variable values of the training data
-        * y_train: dependent variable values of the training data
-        * x_val: independent variable values of the validation data
-        * y_val: dependent variable values of the validation data
-    """
-
-    # TODO: handle if y is None
-    
-    if val_split > 0:
-        num_val = int(val_split*x.shape[0])
-        train_ix = np.full(x.shape[0], True)
-        train_ix[-num_val:] = False
-        if val_shuffle:
-            train_ix = np.random.permutation(train_ix)
-        val_ix = ~train_ix
-        if isinstance(x, (pd.DataFrame, pd.Series)):
-            x_train = x[train_ix]
-            x_val = x[val_ix]
-        else:
-            x_train = x[train_ix, ...]
-            x_val = x[val_ix, ...]
-        if isinstance(y, (pd.DataFrame, pd.Series)):
-            y_train = y[train_ix]
-            y_val = y[val_ix]
-        else:
-            y_train = y[train_ix, ...]
-            y_val = y[val_ix, ...]
-    else:
-        x_train = x
-        y_train = y
-        x_val = x
-        y_val = y
-    return x_train, y_train, x_val, y_val
-
-
 
 class DataGenerator(BaseDataGenerator):
     """Generate data to feed through a model.
@@ -199,10 +104,6 @@ class DataGenerator(BaseDataGenerator):
             x = self.y.iloc[ix]
         else:
             y = self.y[ix, ...]
-
-        # Cast to correct datatype
-        x = cast_to_default_dtype(x)
-        y = cast_to_default_dtype(y)
 
         # Return both x and y
         return x, y
