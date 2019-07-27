@@ -133,7 +133,7 @@ def test_Model_0D():
     assert val.shape[0] == 20
     assert val.shape[1] == 1
     
-    # posterior_mean w/ list of params should return only those params
+    # posterior_sample w/ list of params should return only those params
     val = my_model.posterior_sample(['Weight', 'Std'], n=20)
     assert isinstance(val, dict)
     assert len(val) == 2
@@ -181,6 +181,34 @@ def test_Model_0D():
     assert all(val[v][0].shape[0] == 1 for v in val)
     assert all(val[v][1].shape[0] == 1 for v in val)
 
+    # prior_sample w/ no args should return all params
+    val = my_model.prior_sample(n=20)
+    assert isinstance(val, dict)
+    assert len(val) == 3
+    assert 'Weight' in val
+    assert 'Bias' in val
+    assert 'Std' in val
+    assert all(isinstance(val[v], np.ndarray) for v in val)
+    assert all(val[v].ndim == 1 for v in val)
+    assert all(val[v].shape[0] == 20 for v in val)
+    
+    # prior_sample w/ str should return sample of that param
+    val = my_model.prior_sample('Weight', n=20)
+    assert isinstance(val, np.ndarray)
+    assert val.ndim == 1
+    assert val.shape[0] == 20
+    
+    # prior_sample w/ list of params should return only those params
+    val = my_model.prior_sample(['Weight', 'Std'], n=20)
+    assert isinstance(val, dict)
+    assert len(val) == 2
+    assert 'Weight' in val
+    assert 'Bias' not in val
+    assert 'Std' in val
+    assert all(isinstance(val[v], np.ndarray) for v in val)
+    assert all(val[v].ndim == 1 for v in val)
+    assert all(val[v].shape[0] == 20 for v in val)
+
 
 
 def test_Model_1D():
@@ -189,9 +217,9 @@ def test_Model_1D():
     class MyModel(Model):
 
         def __init__(self):
-            self.weight = Parameter([5, 1])
-            self.bias = Parameter([1, 1])
-            self.std = ScaleParameter([1, 1])
+            self.weight = Parameter([5, 1], name='Weight')
+            self.bias = Parameter([1, 1], name='Bias')
+            self.std = ScaleParameter([1, 1], name='Std')
 
         def __call__(self, x):
             return Normal(x@self.weight() + self.bias(), self.std())
@@ -241,16 +269,212 @@ def test_Model_1D():
     assert samples.shape[0] == 30
     assert samples.shape[1] == 1
 
-
-    # TODO: sampling and ci funcs like in 0d model
+    # metric
+    metric = my_model.metric(x[:30, :], y[:30, :])
+    assert isinstance(metric, np.floating)
+    metric = my_model.metric(x[:30, :], y[:30, :], metric='mse')
+    assert isinstance(metric, np.floating)
+    assert metric >= 0
     
+    # posterior_mean w/ no args should return all params
+    val = my_model.posterior_mean()
+    assert isinstance(val, dict)
+    assert len(val) == 3
+    assert 'Weight' in val
+    assert 'Bias' in val
+    assert 'Std' in val
+    assert all(isinstance(val[v], np.ndarray) for v in val)
+    assert all(val[v].ndim == 2 for v in val)
+    assert val['Weight'].shape[0] == 5
+    assert val['Weight'].shape[1] == 1
+    assert val['Bias'].shape[0] == 1
+    assert val['Bias'].shape[1] == 1
+    assert val['Std'].shape[0] == 1
+    assert val['Std'].shape[1] == 1
+    
+    # posterior_mean w/ str should return value of that param
+    val = my_model.posterior_mean('Weight')
+    assert isinstance(val, np.ndarray)
+    assert val.ndim == 2
+    assert val.shape[0] == 5
+    assert val.shape[1] == 1
+    
+    # posterior_mean w/ list of params should return only those params
+    val = my_model.posterior_mean(['Weight', 'Std'])
+    assert isinstance(val, dict)
+    assert len(val) == 2
+    assert 'Weight' in val
+    assert 'Bias' not in val
+    assert 'Std' in val
+    assert all(isinstance(val[v], np.ndarray) for v in val)
+    assert all(val[v].ndim == 2 for v in val)
+    assert val['Weight'].shape[0] == 5
+    assert val['Weight'].shape[1] == 1
+    assert val['Std'].shape[0] == 1
+    assert val['Std'].shape[1] == 1
+
+    # posterior_sample w/ no args should return all params
+    val = my_model.posterior_sample(n=20)
+    assert isinstance(val, dict)
+    assert len(val) == 3
+    assert 'Weight' in val
+    assert 'Bias' in val
+    assert 'Std' in val
+    assert all(isinstance(val[v], np.ndarray) for v in val)
+    assert all(val[v].ndim == 3 for v in val)
+    assert val['Weight'].shape[0] == 20
+    assert val['Weight'].shape[1] == 5
+    assert val['Weight'].shape[2] == 1
+    assert val['Bias'].shape[0] == 20
+    assert val['Bias'].shape[1] == 1
+    assert val['Bias'].shape[2] == 1
+    assert val['Std'].shape[0] == 20
+    assert val['Std'].shape[1] == 1
+    assert val['Std'].shape[2] == 1
+    
+    # posterior_sample w/ str should return sample of that param
+    val = my_model.posterior_sample('Weight', n=20)
+    assert isinstance(val, np.ndarray)
+    assert val.ndim == 3
+    assert val.shape[0] == 20
+    assert val.shape[1] == 5
+    assert val.shape[2] == 1
+    
+    # posterior_sample w/ list of params should return only those params
+    val = my_model.posterior_sample(['Weight', 'Std'], n=20)
+    assert isinstance(val, dict)
+    assert len(val) == 2
+    assert 'Weight' in val
+    assert 'Bias' not in val
+    assert 'Std' in val
+    assert all(isinstance(val[v], np.ndarray) for v in val)
+    assert all(val[v].ndim == 3 for v in val)
+    assert val['Weight'].shape[0] == 20
+    assert val['Weight'].shape[1] == 5
+    assert val['Weight'].shape[2] == 1
+    assert val['Std'].shape[0] == 20
+    assert val['Std'].shape[1] == 1
+    assert val['Std'].shape[2] == 1
+
+    # posterior_ci should return confidence intervals of all params by def
+    val = my_model.posterior_ci(n=20)
+    assert isinstance(val, dict)
+    assert len(val) == 3
+    assert 'Weight' in val
+    assert 'Bias' in val
+    assert 'Std' in val
+    assert all(isinstance(val[v], tuple) for v in val)
+    assert all(isinstance(val[v][0], np.ndarray) for v in val)
+    assert all(isinstance(val[v][1], np.ndarray) for v in val)
+    assert all(val[v][0].ndim == 2 for v in val)
+    assert all(val[v][1].ndim == 2 for v in val)
+    for i in range(1):
+        assert val['Weight'][i].shape[0] == 5
+        assert val['Weight'][i].shape[1] == 1
+        assert val['Bias'][i].shape[0] == 1
+        assert val['Bias'][i].shape[1] == 1
+        assert val['Std'][i].shape[0] == 1
+        assert val['Std'][i].shape[1] == 1
+
+    # posterior_ci should return ci of only 1 if passed str
+    val = my_model.posterior_ci('Weight', n=20)
+    assert isinstance(val, tuple)
+    assert isinstance(val[0], np.ndarray)
+    assert isinstance(val[1], np.ndarray)
+
+    # posterior_ci should return specified cis if passed list of params
+    val = my_model.posterior_ci(['Weight', 'Std'], n=20)
+    assert isinstance(val, dict)
+    assert len(val) == 2
+    assert 'Weight' in val
+    assert 'Bias' not in val
+    assert 'Std' in val
+    assert all(isinstance(val[v], tuple) for v in val)
+    assert all(isinstance(val[v][0], np.ndarray) for v in val)
+    assert all(isinstance(val[v][1], np.ndarray) for v in val)
+    assert all(val[v][0].ndim == 2 for v in val)
+    assert all(val[v][1].ndim == 2 for v in val)
+    for i in range(1):
+        assert val['Weight'][i].shape[0] == 5
+        assert val['Weight'][i].shape[1] == 1
+        assert val['Std'][i].shape[0] == 1
+        assert val['Std'][i].shape[1] == 1
+    
+    # prior_sample w/ no args should return all params
+    val = my_model.prior_sample(n=20)
+    assert isinstance(val, dict)
+    assert len(val) == 3
+    assert 'Weight' in val
+    assert 'Bias' in val
+    assert 'Std' in val
+    assert all(isinstance(val[v], np.ndarray) for v in val)
+    assert all(val[v].ndim == 1 for v in val)
+    assert all(val[v].shape[0] == 20 for v in val)
+    
+    # prior_sample w/ str should return sample of that param
+    val = my_model.prior_sample('Weight', n=20)
+    assert isinstance(val, np.ndarray)
+    assert val.ndim == 1
+    assert val.shape[0] == 20
+    
+    # prior_sample w/ list of params should return only those params
+    val = my_model.prior_sample(['Weight', 'Std'], n=20)
+    assert isinstance(val, dict)
+    assert len(val) == 2
+    assert 'Weight' in val
+    assert 'Bias' not in val
+    assert 'Std' in val
+    assert all(isinstance(val[v], np.ndarray) for v in val)
+    assert all(val[v].ndim == 1 for v in val)
+    assert all(val[v].shape[0] == 20 for v in val)
 
 
 
 def test_Model_nesting():
     """Tests Model when it contains Modules and sub-modules"""
-    pass
-    # TODO
+
+    class MyModule(Module):
+
+        def __init__(self):
+            self.weight = Parameter([5, 1], name='Weight')
+            self.bias = Parameter([1, 1], name='Bias')
+
+        def __call__(self, x):
+            return x@self.weight() + self.bias()
+
+    class MyModel(Model):
+
+        def __init__(self):
+            self.module = MyModule()
+            self.std = ScaleParameter([1, 1], name='Std')
+
+        def __call__(self, x):
+            return Normal(self.module(x), self.std())
+
+    # Instantiate the model
+    my_model = MyModel()
+
+    # Shouldn't be training
+    assert my_model._is_training is False
+
+    # Data
+    x = np.random.randn(100, 5).astype('float32')
+    w = np.random.randn(5, 1).astype('float32')
+    y = x@w + 1
+    
+    # Fit the model
+    my_model.fit(x, y, batch_size=5, epochs=10)
+
+    # predictive samples
+    samples = my_model.predictive_sample(x[:30, :], n=50)
+    assert isinstance(samples, np.ndarray)
+    assert samples.ndim == 3
+    assert samples.shape[0] == 50
+    assert samples.shape[1] == 30
+    assert samples.shape[2] == 1
+
+    # kl loss should be greater for outer model
+    assert my_model.kl_loss().numpy() > my_model.module.kl_loss().numpy()
 
 
 

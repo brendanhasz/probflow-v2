@@ -22,62 +22,62 @@ import probflow.core.ops as O
 
 def log_prob(y_true, y_pred_dist):
     """Sum of the log probabilities of predictions."""
-    return O.sum(y_pred_dist.log_prob(y_true))
+    return O.sum(y_pred_dist.log_prob(y_true), axis=None)
 
 
 
 def accuracy(y_true, y_pred_dist):
     """Accuracy of predictions."""
-    return O.mean(O.round(y_pred_dist.mean()) == y_true)
+    return O.mean(O.round(y_pred_dist.mean()) == y_true, axis=None)
 
 
 
 def mean_squared_error(y_true, y_pred_dist):
     """Mean squared error."""
-    return O.mean(O.square(y_true-y_pred_dist.mean()))
+    return O.mean(O.square(y_true-y_pred_dist.mean()), axis=None)
 
 
 
 def sum_squared_error(y_true, y_pred_dist):
     """Sum of squared error."""
-    return O.sum(O.square(y_true-y_pred_dist.mean()))
+    return O.sum(O.square(y_true-y_pred_dist.mean()), axis=None)
 
 
 
 def mean_absolute_error(y_true, y_pred_dist):
     """Mean absolute error."""
-    return O.mean(O.abs(y_true-y_pred_dist.mean()))
+    return O.mean(O.abs(y_true-y_pred_dist.mean()), axis=None)
 
 
 
 def r_squared(y_true, y_pred_dist):
     """Coefficient of determination."""
-    ss_tot = O.sum(O.square(y_true-O.mean(y_true)))
-    ss_res = O.sum(O.square(y_true-y_pred_dist.mean()))
+    ss_tot = O.sum(O.square(y_true-O.mean(y_true)), axis=None)
+    ss_res = O.sum(O.square(y_true-y_pred_dist.mean()), axis=None)
     return 1.0 - ss_res / ss_tot
 
 
 
 def true_positive_rate(y_true, y_pred_dist):
     """True positive rate aka sensitivity aka recall."""
-    p = O.sum(y_true)
-    tp = O.sum(O.round(y_pred_dist.mean()) == y_true)
+    p = O.sum(y_true, axis=None)
+    tp = O.sum(O.round(y_pred_dist.mean()) == y_true, axis=None)
     return tp/p
 
 
 
 def true_negative_rate(y_true, y_pred_dist):
     """True negative rate aka specificity aka selectivity."""
-    n = O.sum(O.abs(y_true-1))
-    tn = O.sum(O.abs((O.round(y_pred_dist.mean()) == y_true) - 1))
+    n = O.sum(O.abs(y_true-1), axis=None)
+    tn = O.sum(O.abs((O.round(y_pred_dist.mean()) == y_true) - 1), axis=None)
     return tn/n
 
 
 
 def precision(y_true, y_pred_dist):
     """Precision."""
-    ap = O.sum(O.round(y_pred_dist.mean()))
-    tp = O.sum(O.round(y_pred_dist.mean()) == y_true)
+    ap = O.sum(O.round(y_pred_dist.mean()), axis=None)
+    tp = O.sum(O.round(y_pred_dist.mean()) == y_true, axis=None)
     return tp/ap
 
 

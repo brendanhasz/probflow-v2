@@ -860,6 +860,9 @@ class Model(Module):
 
         TODO
 
+        TODO: though maybe this should be a method of module...
+        model would have to add to it the observation dist
+
         """
         pass
         # TODO
