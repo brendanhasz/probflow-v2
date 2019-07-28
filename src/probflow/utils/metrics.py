@@ -14,74 +14,115 @@ Evaluation metrics
 """
 
 
+
+__all__ = [
+    'log_prob',
+    'accuracy',
+    'mean_squared_error',
+    'sum_squared_error',
+    'mean_absolute_error',
+    'r_squared',
+    'true_positive_rate',
+    'true_negative_rate',
+    'precision',
+    'f1_score',
+    'get_metric_fn',
+]
+
+
+
 import numpy as np
-
-import probflow.core.ops as O
-
+import pandas as pd
 
 
+
+def y_true_numpy(fn):
+    """Cast y_true to numpy before computing metric"""
+
+    def metric_fn(y_true, y_pred_dist):
+        if isinstance(y_true, (pd.Series, pd.DataFrame)):
+            return fn(y_true.values(), y_pred_dist)
+        elif isinstance(y_true, np.ndarray):
+            return fn(y_true, y_pred_dist)
+        else:
+            return fn(y_true.numpy(), y_pred_dist)
+
+    return metric_fn
+
+
+
+@y_true_numpy
 def log_prob(y_true, y_pred_dist):
     """Sum of the log probabilities of predictions."""
-    return O.sum(y_pred_dist.log_prob(y_true), axis=None)
+    return np.sum(y_pred_dist.log_prob(y_true).numpy())
 
 
 
+@y_true_numpy
 def accuracy(y_true, y_pred_dist):
     """Accuracy of predictions."""
-    return O.mean(O.round(y_pred_dist.mean()) == y_true, axis=None)
+    return np.mean(y_pred_dist.mean().numpy() == y_true)
 
 
 
+@y_true_numpy
 def mean_squared_error(y_true, y_pred_dist):
     """Mean squared error."""
-    return O.mean(O.square(y_true-y_pred_dist.mean()), axis=None)
+    return np.mean(np.square(y_true-y_pred_dist.mean().numpy()))
 
 
 
+@y_true_numpy
 def sum_squared_error(y_true, y_pred_dist):
     """Sum of squared error."""
-    return O.sum(O.square(y_true-y_pred_dist.mean()), axis=None)
+    return np.sum(np.square(y_true-y_pred_dist.mean().numpy()))
 
 
 
+@y_true_numpy
 def mean_absolute_error(y_true, y_pred_dist):
     """Mean absolute error."""
-    return O.mean(O.abs(y_true-y_pred_dist.mean()), axis=None)
+    return np.mean(np.abs(y_true-y_pred_dist.mean().numpy()))
 
 
 
+@y_true_numpy
 def r_squared(y_true, y_pred_dist):
     """Coefficient of determination."""
-    ss_tot = O.sum(O.square(y_true-O.mean(y_true)), axis=None)
-    ss_res = O.sum(O.square(y_true-y_pred_dist.mean()), axis=None)
+    ss_tot = np.sum(np.square(y_true-np.mean(y_true)))
+    ss_res = np.sum(np.square(y_true-y_pred_dist.mean().numpy()))
     return 1.0 - ss_res / ss_tot
 
 
 
+@y_true_numpy
 def true_positive_rate(y_true, y_pred_dist):
     """True positive rate aka sensitivity aka recall."""
-    p = O.sum(y_true, axis=None)
-    tp = O.sum(O.round(y_pred_dist.mean()) == y_true, axis=None)
+    p = np.sum(y_true == 1)
+    tp = np.sum((y_pred_dist.mean().numpy() == y_true) & (y_true == 1))
     return tp/p
 
 
 
+@y_true_numpy
 def true_negative_rate(y_true, y_pred_dist):
     """True negative rate aka specificity aka selectivity."""
-    n = O.sum(O.abs(y_true-1), axis=None)
-    tn = O.sum(O.abs((O.round(y_pred_dist.mean()) == y_true) - 1), axis=None)
+    n = np.sum(y_true == 0)
+    tn = np.sum((y_pred_dist.mean().numpy() == y_true) & (y_true == 0))
     return tn/n
 
 
 
+@y_true_numpy
 def precision(y_true, y_pred_dist):
     """Precision."""
-    ap = O.sum(O.round(y_pred_dist.mean()), axis=None)
-    tp = O.sum(O.round(y_pred_dist.mean()) == y_true, axis=None)
+    ap = np.sum(y_pred_dist.mean().numpy())
+    tp = np.sum((y_pred_dist.mean().numpy() == y_true) & (y_true == 1))
     return tp/ap
 
 
 
+@y_true_numpy
 def f1_score(y_true, y_pred_dist):
     """F-measure."""
     p = precision(y_true, y_pred_dist)
@@ -137,10 +178,15 @@ def get_metric_fn(metric):
         #'auc': roc_auc,
     }
 
-    # Error if invalid metric string
-    if metric not in metrics:
-        raise ValueError(metric+' is not a valid metric string. '+
-                         'Valid strings are: '+', '.join(metrics.keys()))
-
     # Return the corresponding function
-    return metrics[metric]
+    if callable(metric):
+        return metric
+    elif isinstance(metric, str):
+        if metric not in metrics:
+            raise ValueError(metric+' is not a valid metric string. '+
+                             'Valid strings are: '+', '.join(metrics.keys()))
+        else:
+            return metrics[metric]
+    else:
+        raise TypeError('metric must be a str or callable')
+

@@ -435,7 +435,7 @@ class Model(Module):
         
         # Compute metric on predictions
         metric_fn = get_metric_fn(metric)
-        return metric_fn(y, self(x)).numpy()
+        return metric_fn(y, self(x))
 
 
     def posterior_mean(self, params=None):

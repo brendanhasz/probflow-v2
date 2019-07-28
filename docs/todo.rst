@@ -10,7 +10,6 @@ are totally welcome!
 Backlog
 -------
 
-* Tests for metrics
 * Tests for callbacks
 * Stats test and test speed on large dataset (looked like there was some kind of autograph warning w/ kl div?)
 * Model evaluation methods (ones to be used in readme)
