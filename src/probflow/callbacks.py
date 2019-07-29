@@ -6,6 +6,7 @@ training process.
 * :class:`.Callback` - abstract base class for all callbacks
 * :class:`.LearningRateScheduler` - set the learning rate by epoch
 * :class:`.MonitorMetric` - record a metric over the course of training
+* :class:`.MonitorParameter` - record a parameter over the course of training
 * :class:`.EarlyStopping` - stop training if some metric stops improving
 
 ----------
@@ -17,10 +18,13 @@ __all__ = [
     'Callback',
     'LearningRateScheduler',
     'MonitorMetric',
+    'MonitorParameter',
     'EarlyStopping',
 ]
 
 
+
+import numpy as np
 
 from probflow.core.base import BaseCallback
 from probflow.data import DataGenerator
@@ -76,13 +80,19 @@ class LearningRateScheduler(Callback):
 
         # Store function
         self.fn = fn
-        self.epochs = 0
+        self.current_epoch = 0
+        self.current_lr = 0
+        self.epochs = []
+        self.learning_rate = []
 
 
     def on_epoch_end(self):
         """Set the learning rate at the end of each epoch"""
-        self.model.set_learning_rate(self.fn(self.epochs))
-        self.epochs += 1
+        self.current_epoch += 1
+        self.current_lr = self.fn(self.current_epoch)
+        self.model.set_learning_rate(self.current_lr)
+        self.epochs += [self.current_epoch]
+        self.learning_rate += [self.current_lr]
 
 
 
@@ -91,7 +101,7 @@ class MonitorMetric(Callback):
 
     """
 
-    def __init__(self, x, y=None, metric='log_prob', verbose=True)
+    def __init__(self, x, y=None, metric='log_prob', verbose=True):
 
         # Store metric
         self.metric_fn = get_metric_fn(metric)
@@ -123,6 +133,32 @@ class MonitorMetric(Callback):
                   self.current_epoch,
                   self.metric_fn.__name__,
                   self.current_metric))
+
+
+
+class MonitorParameter(Callback):
+    """Monitor the mean value of Parameter(s) over the course of training
+
+    TODO
+
+    """
+
+    def __init__(self, x, y=None, params=None):
+
+        # Store metrics and epochs
+        self.params = params
+        self.current_params = None
+        self.current_epoch = 0
+        self.parameter_values = []
+        self.epochs = []
+
+
+    def on_epoch_end(self):
+        """Store mean values of Parameter(s) each epoch"""
+        self.current_params = self.model.posterior_mean(self.params)
+        self.current_epoch += 1
+        self.parameter_values += [self.current_params]
+        self.epochs += [self.current_epoch]
 
 
 

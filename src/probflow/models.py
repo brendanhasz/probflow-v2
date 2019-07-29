@@ -294,6 +294,7 @@ class Model(Module):
         with Sampling(n=n, flipout=False):
             samples = self(O.expand_dims(x, 0)).sample()
         return samples.numpy()
+        # TODO: handle when x is a DataGenerator
 
 
     def aleatoric_sample(self, x, n=1000):
@@ -320,6 +321,7 @@ class Model(Module):
         """
         samples = self(x).sample(n=n)
         return samples.numpy()
+        # TODO: handle when x is a DataGenerator
 
 
     def epistemic_sample(self, x, n=1000):
@@ -348,6 +350,7 @@ class Model(Module):
         with Sampling(n=n, flipout=False):
             samples = self(O.expand_dims(x, 0)).mean()
         return samples.numpy()
+        # TODO: handle when x is a DataGenerator
 
 
     def predict(self, x):
@@ -376,6 +379,7 @@ class Model(Module):
 
         """
         return self(x).mean().numpy()
+        # TODO: handle when x is a DataGenerator
 
 
     def metric(self, x, y=None, metric='log_prob'):
@@ -428,14 +432,30 @@ class Model(Module):
         TODO
         """
 
-        # Generative model?
+        # Passed a DataGenerator?
+        if isinstance(x, DataGenerator):
+            data = x[0]
+            if len(data) == 1:
+                x = data[0]
+                y = None
+            else:
+                x = data[0]
+                y = data[1]
+
+        # Make predictions
         if y is None:
             y = x
             x = None
+            preds = self()
+        else:
+            preds = self(x)
         
+        # TODO: handle DataGenerator + generative model in same way as
+        #predict, *_sample, etc
+
         # Compute metric on predictions
         metric_fn = get_metric_fn(metric)
-        return metric_fn(y, self(x))
+        return metric_fn(y, preds)
 
 
     def posterior_mean(self, params=None):
@@ -728,6 +748,7 @@ class Model(Module):
         """
         pass
         # TODO
+        # TODO: handle when x is a DataGenerator, or y=None
 
 
     def log_prob_by(self, 
@@ -768,6 +789,7 @@ class Model(Module):
         """
         pass
         # TODO
+        # TODO: handle when x is a DataGenerator, or y=None
 
 
     def prob(self, 
@@ -813,6 +835,7 @@ class Model(Module):
         """
         pass
         # TODO
+        # TODO: handle when x is a DataGenerator, or y=None
 
 
     def prob_by(self, 
@@ -853,6 +876,7 @@ class Model(Module):
         """
         pass
         # TODO
+        # TODO: handle when x is a DataGenerator, or y=None
 
 
     def summary(self):

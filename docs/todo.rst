@@ -10,7 +10,9 @@ are totally welcome!
 Backlog
 -------
 
-* Tests for callbacks
+* Make predict, _sample, metrics, prob, log_prob etc methods of Model handle when x is a DataGenerator (maybe convert to DG if not already, and then assume DG?)
+* Tests for applications
+* Tests for utils?
 * Stats test and test speed on large dataset (looked like there was some kind of autograph warning w/ kl div?)
 * Model evaluation methods (ones to be used in readme)
 * Tests for those
