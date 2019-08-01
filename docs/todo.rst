@@ -10,6 +10,7 @@ are totally welcome!
 Backlog
 -------
 
+* Additional application: MultinomialLogisticRegression, or make LogisticRegression able to handle multiple classes
 * Make predict, _sample, metrics, prob, log_prob etc methods of Model handle when x is a DataGenerator (maybe convert to DG if not already, and then assume DG?)
 * Tests for applications
 * Tests for utils?
@@ -23,7 +24,13 @@ Backlog
 * Make sure API is fully documented
 * Different plotting methods for different types of dists (both for Parameter priors/posteriors and predictive distribution plots)
 * All model evaluation methods + specialized types of models
-* Bayes estimate / decision methods
 * Make Module.trainable_variables return tf.Variables which are properties of module+sub-modules as well (and not neccesarily in parameters, also allow embedding of tf.Modules?)
+* Bayes estimate / decision methods
 * Convolutional modules
+
+
+Issues
+------
+
+* Poisson currently requires y values to be floats? I think that's a TFP/TF 2.0 issue though (in their sc there's the line ``tf.maximum(y, 0.)``, which throws an error when y is of an int type).  Could cast inputs to float in pf.distributions.Poisson.__init__...
 

@@ -21,6 +21,7 @@ from probflow.parameters import Parameter
 from probflow.parameters import ScaleParameter
 from probflow.distributions import Normal
 from probflow.distributions import Bernoulli
+from probflow.distributions import Categorical
 from probflow.distributions import Poisson
 from probflow.modules import Module
 from probflow.modules import Dense
@@ -105,7 +106,7 @@ class PoissonRegression(DiscreteModel):
     bias : :class:`.Parameter`
         Regression intercept
     """
-    def __init__(self, dims):
+    def __init__(self, dims: int):
         self.weights = Parameter([dims, 1])
         self.bias = Parameter()
 
