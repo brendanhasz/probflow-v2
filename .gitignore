@@ -1,5 +1,6 @@
 # vim stuff
 *.swp
+*.swo
 *.vim
 
 # Byte-compiled / optimized / DLL files

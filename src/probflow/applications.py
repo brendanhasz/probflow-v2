@@ -16,7 +16,7 @@ __all__ = [
 
 
 
-from typing import List
+from typing import List, Callable
 
 import probflow.core.ops as O
 from probflow.parameters import Parameter
@@ -40,7 +40,7 @@ class LinearRegression(ContinuousModel):
 
     Parameters
     ----------
-    dims : int
+    d : int
         Dimensionality of the independent variable (number of features)
 
     Attributes
@@ -53,8 +53,8 @@ class LinearRegression(ContinuousModel):
         Standard deviation of the Normal observation distribution
     """
 
-    def __init__(self, dims: int):
-        self.weights = Parameter([dims, 1])
+    def __init__(self, d: int):
+        self.weights = Parameter([d, 1])
         self.bias = Parameter()
         self.std = ScaleParameter()
 
@@ -69,10 +69,14 @@ class LogisticRegression(CategoricalModel):
 
     TODO: explain, math, diagram, etc
 
+    TODO: set k>2 for a Multinomial logistic regression
+
     Parameters
     ----------
-    dims : int
+    d : int
         Dimensionality of the independent variable (number of features)
+    k : int
+        Number of classes of the dependent variable
 
     Attributes
     ----------
@@ -81,13 +85,14 @@ class LogisticRegression(CategoricalModel):
     bias : :class:`.Parameter`
         Regression intercept
     """
-    def __init__(self, dims: int):
-        self.weights = Parameter([dims, 1])
-        self.bias = Parameter()
+
+    def __init__(self, d: int, k: int = 2):
+        self.weights = Parameter([d, k-1])
+        self.bias = Parameter([k-1])
 
 
     def __call__(self, x):
-        return Bernoulli(x @ self.weights() + self.bias())
+        return Categorical(O.add_col_of(x @ self.weights() + self.bias(), 0))
 
 
 
@@ -98,7 +103,7 @@ class PoissonRegression(DiscreteModel):
 
     Parameters
     ----------
-    dims : int
+    d : int
         Dimensionality of the independent variable (number of features)
 
     Attributes
@@ -108,8 +113,9 @@ class PoissonRegression(DiscreteModel):
     bias : :class:`.Parameter`
         Regression intercept
     """
-    def __init__(self, dims: int):
-        self.weights = Parameter([dims, 1])
+
+    def __init__(self, d: int):
+        self.weights = Parameter([d, 1])
         self.bias = Parameter()
 
 
@@ -127,7 +133,7 @@ class DenseNetwork(Module):
 
     Parameters
     ----------
-    dims : List[int]
+    d : List[int]
         Dimensionality (number of units) for each layer.
         The first element should be the dimensionality of the independent
         variable (number of features).
@@ -145,11 +151,10 @@ class DenseNetwork(Module):
         Activation function for each layer
     """
 
-    def __init__(self, dims, activation=O.relu):
-        self.activations = [activation for i in range(len(dims)-2)]
+    def __init__(self, d: List[int], activation: Callable = O.relu):
+        self.activations = [activation for i in range(len(d)-2)]
         self.activations += [lambda x: x]
-        self.layers = [Dense(dims[i], dims[i+1])
-                       for i in range(len(dims)-1)]
+        self.layers = [Dense(d[i], d[i+1]) for i in range(len(d)-1)]
 
 
     def __call__(self, x):
@@ -167,7 +172,7 @@ class DenseRegression(ContinuousModel):
 
     Parameters
     ----------
-    dims : List[int]
+    d : List[int]
         Dimensionality (number of units) for each layer.
         The first element should be the dimensionality of the independent
         variable (number of features), and the last element should be the
@@ -183,8 +188,8 @@ class DenseRegression(ContinuousModel):
         Standard deviation of the Normal observation distribution
     """
 
-    def __init__(self, dims):
-        self.network = DenseNetwork(dims)
+    def __init__(self, d: List[int]):
+        self.network = DenseNetwork(d)
         self.std = ScaleParameter()
 
 
@@ -200,7 +205,7 @@ class DenseClassifier(CategoricalModel):
 
     Parameters
     ----------
-    dims : List[int]
+    d : List[int]
         Dimensionality (number of units) for each layer.
         The first element should be the dimensionality of the independent
         variable (number of features), and the last element should be the
@@ -213,8 +218,9 @@ class DenseClassifier(CategoricalModel):
         class probabilities
     """
 
-    def __init__(self, dims: List[int]):
-        self.network = DenseNetwork(dims[:-1]+[dims[-1]-1])
+    def __init__(self, d: List[int]):
+        d[-1] -= 1
+        self.network = DenseNetwork(d)
 
 
     def __call__(self, x):
