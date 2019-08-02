@@ -16,6 +16,8 @@ __all__ = [
 
 
 
+from typing import List
+
 import probflow.core.ops as O
 from probflow.parameters import Parameter
 from probflow.parameters import ScaleParameter
@@ -211,9 +213,9 @@ class DenseClassifier(CategoricalModel):
         class probabilities
     """
 
-    def __init__(self, dims):
-        self.network = DenseNetwork(dims)
+    def __init__(self, dims: List[int]):
+        self.network = DenseNetwork(dims[:-1]+[dims[-1]-1])
 
 
     def __call__(self, x):
-        return Categorical(self.network(x))
+        return Categorical(O.add_col_of(self.network(x), 0))

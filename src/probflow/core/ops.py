@@ -251,8 +251,10 @@ def gather(vals, inds, axis=0):
         return tf.gather(vals, inds, axis=axis)
 
 
+
 def additive_logistic_transform(vals):
     """The additive logistic transformation"""
+    # TODO: is this used?
     if get_backend() == 'pytorch':
         import torch
         raise NotImplementedError
@@ -261,3 +263,15 @@ def additive_logistic_transform(vals):
         ones_shape = tf.concat([vals.shape[:-1], [1]], axis=-1)
         exp_vals = tf.concat([tf.exp(vals), tf.ones(ones_shape)], axis=-1)
         return exp_vals/tf.reduce_sum(exp_vals, axis=-1, keepdims=True)
+
+
+
+def add_col_of(vals, val):
+    """Add a column of a value to a tensor"""
+    if get_backend() == 'pytorch':
+        import torch
+        raise NotImplementedError
+    else:
+        import tensorflow as tf
+        ones_shape = tf.concat([vals.shape[:-1], [1]], axis=-1)
+        return tf.concat([vals, val*tf.ones(ones_shape)], axis=-1)
