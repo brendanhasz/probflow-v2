@@ -67,7 +67,7 @@ def test_Callback():
     # Test MontiorMetric
     x_val = np.random.randn(100).astype('float32')
     y_val = -x_val + 1
-    mm = MonitorMetric(x_val, y_val, metric='mae', verbose=False)
+    mm = MonitorMetric('mae', x_val, y_val, verbose=False)
     my_model.fit(x, y, batch_size=5, epochs=10, callbacks=[mm])
     assert isinstance(mm.current_epoch, int)
     assert mm.current_epoch == 10

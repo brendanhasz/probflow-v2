@@ -28,6 +28,7 @@ import numpy as np
 
 from probflow.core.base import BaseCallback
 from probflow.data import DataGenerator
+from probflow.data import make_generator
 from probflow.utils.metrics import get_metric_fn
 
 
@@ -101,17 +102,13 @@ class MonitorMetric(Callback):
 
     """
 
-    def __init__(self, x, y=None, metric='log_prob', verbose=True):
+    def __init__(self, metric, x, y=None, verbose=True):
 
         # Store metric
         self.metric_fn = get_metric_fn(metric)
 
         # Store validation data
-        if isinstance(x, DataGenerator):
-            self.data = x
-        else:
-            self.data = DataGenerator(x, y, batch_size=x.shape[0], 
-                                      shuffle=False)
+        self.data = make_generator(x, y)
 
         # Store metrics and epochs
         self.current_metric = np.nan
@@ -123,8 +120,7 @@ class MonitorMetric(Callback):
 
     def on_epoch_end(self):
         """Compute metric on validation data"""
-        self.current_metric = self.model.metric(self.data, 
-                                                metric=self.metric_fn)
+        self.current_metric = self.model.metric(self.metric_fn, self.data)
         self.current_epoch += 1
         self.metrics += [self.current_metric]
         self.epochs += [self.current_epoch]

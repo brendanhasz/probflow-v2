@@ -135,10 +135,6 @@ class BaseDataGenerator(ABC):
     """Abstract base class for ProbFlow DataGenerators"""
 
 
-    # The current batch
-    _batch = -1
-
-
     @abstractmethod
     def __init__(self, *args):
         pass
@@ -171,6 +167,7 @@ class BaseDataGenerator(ABC):
 
     def __iter__(self):
         """Get an iterator over batches"""
+        self._batch = -1
         return self
 
     

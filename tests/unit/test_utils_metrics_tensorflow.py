@@ -16,30 +16,6 @@ def is_close(a, b, tol=1e-5):
     return np.abs(a-b) < tol
 
 
-def test_log_prob():
-    """Tests probflow.utils.metrics.log_prob"""
-
-    # Predictive dist
-    means = tf.constant([0, 0, 1, 1, 0, 0, 1, 1], dtype=tf.float32)
-    stds = tf.constant([1, 1, 1, 1, 2, 2, 2, 2], dtype=tf.float32)
-    pred_dist = Normal(means, stds)
-    y_true = np.array([0, 1, 0, 1, 0, 1, 0, 1]).astype('float32')
-
-    # Compare using numpy to probflow's metric
-    nlpdf = lambda x, m, s: (np.log(1.0/np.sqrt(2*np.pi*s*s)) + 
-                             -np.power(x-m, 2)/(2*s*s))
-    numpy_metric = (nlpdf(0, 0, 1) + 
-                    nlpdf(1, 0, 1) + 
-                    nlpdf(0, 1, 1) + 
-                    nlpdf(1, 1, 1) + 
-                    nlpdf(0, 0, 2) + 
-                    nlpdf(1, 0, 2) + 
-                    nlpdf(0, 1, 2) + 
-                    nlpdf(1, 1, 2))
-    computed_metric = metrics.log_prob(y_true, pred_dist)
-    assert is_close(numpy_metric, computed_metric)
-
-
 
 def test_accuracy():
     """Tests probflow.utils.metrics.accuracy"""
@@ -50,7 +26,7 @@ def test_accuracy():
     y_true = np.array([1, 0, 1, 1, 0, 1]).astype('float32')
 
     # Compare metric
-    assert is_close(metrics.accuracy(y_true, pred_dist), 2.0/3.0)
+    assert is_close(metrics.accuracy(y_true, pred_dist.mean()), 2.0/3.0)
 
     
 
@@ -63,7 +39,7 @@ def test_mean_squared_error():
     y_true = np.array([0, 0, 0, 0, 1, 2]).astype('float32')
 
     # Compare metric
-    assert is_close(metrics.mean_squared_error(y_true, pred_dist), 10.0/6.0)
+    assert is_close(metrics.mean_squared_error(y_true, pred_dist.mean()), 10.0/6.0)
 
 
 
@@ -76,7 +52,7 @@ def test_sum_squared_error():
     y_true = np.array([0, 0, 0, 0, 1, 2]).astype('float32')
 
     # Compare metric
-    assert is_close(metrics.sum_squared_error(y_true, pred_dist), 10.0)
+    assert is_close(metrics.sum_squared_error(y_true, pred_dist.mean()), 10.0)
 
 
 
@@ -89,7 +65,7 @@ def test_mean_absolute_error():
     y_true = np.array([0, 0, 0, 0, 1, 2]).astype('float32')
 
     # Compare metric
-    assert is_close(metrics.mean_absolute_error(y_true, pred_dist), 1.0)
+    assert is_close(metrics.mean_absolute_error(y_true, pred_dist.mean()), 1.0)
 
 
 
@@ -102,7 +78,7 @@ def test_r_squared():
     y_true = np.array([0, 1, 2, 3, 4]).astype('float32')
 
     # Compare metric
-    assert is_close(metrics.r_squared(y_true, pred_dist), 0.5)
+    assert is_close(metrics.r_squared(y_true, pred_dist.mean()), 0.5)
 
 
 
@@ -115,7 +91,7 @@ def test_true_positive_rate():
     y_true = np.array([1, 0, 1, 1, 0, 1]).astype('float32')
 
     # Compare metric
-    assert is_close(metrics.true_positive_rate(y_true, pred_dist), 0.75)
+    assert is_close(metrics.true_positive_rate(y_true, pred_dist.mean()), 0.75)
 
 
 
@@ -128,7 +104,7 @@ def test_true_negative_rate():
     y_true = np.array([1, 0, 1, 1, 0, 0]).astype('float32')
 
     # Compare metric
-    assert is_close(metrics.true_negative_rate(y_true, pred_dist), 1.0/3.0)
+    assert is_close(metrics.true_negative_rate(y_true, pred_dist.mean()), 1.0/3.0)
 
     
 
@@ -141,7 +117,7 @@ def test_precision():
     y_true = np.array([1, 0, 1, 1, 0, 0]).astype('float32')
 
     # Compare metric
-    assert is_close(metrics.precision(y_true, pred_dist), 3.0/5.0)
+    assert is_close(metrics.precision(y_true, pred_dist.mean()), 3.0/5.0)
 
 
 
@@ -157,7 +133,7 @@ def test_f1_score():
     ppv = 2/4
     tpr = 2/3
     f1 = 2*(ppv*tpr)/(ppv+tpr)
-    assert is_close(metrics.f1_score(y_true, pred_dist), f1)
+    assert is_close(metrics.f1_score(y_true, pred_dist.mean()), f1)
 
 
 
@@ -175,11 +151,11 @@ def test_get_metric_fn():
     ppv = 2/4
     tpr = 2/3
     f1 = 2*(ppv*tpr)/(ppv+tpr)
-    assert is_close(metric_fn(y_true, pred_dist), f1)
+    assert is_close(metric_fn(y_true, pred_dist.mean()), f1)
     
     # Should be able to pass a callable
     metric_fn = metrics.get_metric_fn(lambda x, y: 3)
-    assert metric_fn(y_true, pred_dist) == 3
+    assert metric_fn(y_true, pred_dist.mean()) == 3
     
     # Should raise a type error if passed anything else
     with pytest.raises(TypeError):

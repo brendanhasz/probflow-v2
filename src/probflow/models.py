@@ -31,6 +31,7 @@ __all__ = [
 import warnings
 from typing import List
 
+import numpy as np
 import matplotlib.pyplot as plt
 
 from probflow.core.settings import get_backend
@@ -44,6 +45,7 @@ import probflow.core.ops as O
 from probflow.modules import Module
 from probflow.utils.plotting import plot_dist
 from probflow.data import DataGenerator
+from probflow.data import make_generator
 from probflow.utils.metrics import get_metric_fn
 
 
@@ -171,7 +173,7 @@ class Model(Module):
         x : |ndarray| or |DataFrame| or |Series| or |DataGenerator|
             Independent variable values (or, if fitting a generative model,
             the dependent variable values).  Should be of shape (Nsamples,...)
-        y : |None| or |ndarray| or |DataFrame| or |Series| or |DataGenerator|
+        y : |None| or |ndarray| or |DataFrame| or |Series|
             Dependent variable values (or, if fitting a generative model, 
             ``None``). Should be of shape (Nsamples,...).  Default = ``None``
         batch_size : int
@@ -202,11 +204,8 @@ class Model(Module):
             Default = True
         """
 
-        # Create DataGenerators for training and validation data
-        if isinstance(x, DataGenerator):
-            data = x
-        else:
-            data = DataGenerator(x, y, batch_size=batch_size, shuffle=shuffle)
+        # Create DataGenerator from input data if not already
+        data = make_generator(x, y, batch_size=batch_size, shuffle=shuffle)
 
         # Use default optimizer if none specified
         self._learning_rate = learning_rate
@@ -289,12 +288,13 @@ class Model(Module):
         -------
         |ndarray|
             Samples from the predictive distribution.  Size
-            (num_samples,x.shape[0],...)
+            (num_samples, x.shape[0], ...)
         """
+        samples = []
         with Sampling(n=n, flipout=False):
-            samples = self(O.expand_dims(x, 0)).sample()
-        return samples.numpy()
-        # TODO: handle when x is a DataGenerator
+            for x_data, y_data in make_generator(x, test=True):
+                samples += [self(O.expand_dims(x_data, 0)).sample()]
+        return np.concatenate(samples, axis=1)
 
 
     def aleatoric_sample(self, x, n=1000):
@@ -319,9 +319,10 @@ class Model(Module):
             Samples from the predicted mean distribution.  Size
             (num_samples,x.shape[0],...)
         """
-        samples = self(x).sample(n=n)
-        return samples.numpy()
-        # TODO: handle when x is a DataGenerator
+        samples = []
+        for x_data, y_data in make_generator(x, test=True):
+            samples += [self(x_data).sample(n=n).numpy()]
+        return np.concatenate(samples, axis=1)
 
 
     def epistemic_sample(self, x, n=1000):
@@ -345,12 +346,13 @@ class Model(Module):
         -------
         |ndarray|
             Samples from the predicted mean distribution.  Size
-            (num_samples,x.shape[0],...)
+            (num_samples, x.shape[0], ...)
         """
+        samples = []
         with Sampling(n=n, flipout=False):
-            samples = self(O.expand_dims(x, 0)).mean()
-        return samples.numpy()
-        # TODO: handle when x is a DataGenerator
+            for x_data, y_data in make_generator(x, test=True):
+                samples += [self(O.expand_dims(x_data, 0)).mean().numpy()]
+        return np.concatenate(samples, axis=1)
 
 
     def predict(self, x):
@@ -378,26 +380,20 @@ class Model(Module):
         TODO: Docs...
 
         """
-        return self(x).mean().numpy()
-        # TODO: handle when x is a DataGenerator
+        preds = []
+        for x_data, y_data in make_generator(x, test=True):
+            preds += [self(x_data).mean().numpy()]
+        return np.concatenate(preds, axis=0)
 
 
-    def metric(self, x, y=None, metric='log_prob'):
+    def metric(self, metric, x, y=None):
         """Compute a metric of model performance
 
         TODO: docs
 
-        TODO: methods which just call this w/ a specific metric? for shorthand
-
 
         Parameters
         ----------
-        x : |ndarray| or |DataFrame| or |Series| or |Tensor| or |DataGenerator|
-            Independent variable values of the dataset to evaluate (aka the 
-            "features").  Or a |DataGenerator| to generate both x and y.
-        y : |ndarray| or |DataFrame| or |Series| or |Tensor|
-            Dependent variable values of the dataset to evaluate (aka the 
-            "target"). 
         metric : str or callable
             Metric to evaluate.  Available metrics:
 
@@ -426,36 +422,30 @@ class Model(Module):
             * 'f1': F-measure
             * callable: a function which takes (y_true, y_pred_dist)
 
+        x : |ndarray| or |DataFrame| or |Series| or |Tensor| or |DataGenerator|
+            Independent variable values of the dataset to evaluate (aka the 
+            "features").  Or a |DataGenerator| to generate both x and y.
+        y : |ndarray| or |DataFrame| or |Series| or |Tensor|
+            Dependent variable values of the dataset to evaluate (aka the 
+            "target"). 
 
         Returns
         -------
         TODO
         """
 
-        # Passed a DataGenerator?
-        if isinstance(x, DataGenerator):
-            data = x[0]
-            if len(data) == 1:
-                x = data[0]
-                y = None
-            else:
-                x = data[0]
-                y = data[1]
+        # Get true values and predictions
+        y_true = []
+        y_pred = []
+        for x_data, y_data in make_generator(x, y):
+            y_true += [y_data]
+            y_pred += [self(x_data).mean().numpy()]
+        y_true = np.concatenate(y_true, axis=0)
+        y_pred = np.concatenate(y_pred, axis=0)
 
-        # Make predictions
-        if y is None:
-            y = x
-            x = None
-            preds = self()
-        else:
-            preds = self(x)
-        
-        # TODO: handle DataGenerator + generative model in same way as
-        #predict, *_sample, etc
-
-        # Compute metric on predictions
+        # Compute metric between true values and predictions
         metric_fn = get_metric_fn(metric)
-        return metric_fn(y, preds)
+        return metric_fn(y_true, y_pred)
 
 
     def posterior_mean(self, params=None):

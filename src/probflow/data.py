@@ -9,6 +9,7 @@ TODO: more info...
 
 __all__ = [
     'DataGenerator',
+    'make_generator',
 ]
 
 
@@ -27,9 +28,32 @@ class DataGenerator(BaseDataGenerator):
 
     TODO
 
+    Parameters
+    ----------
+    x : |ndarray| or |DataFrame| or |Series| or |DataGenerator|
+        Independent variable values (or, if fitting a generative model,
+        the dependent variable values).  Should be of shape (Nsamples,...)
+    y : |None| or |ndarray| or |DataFrame| or |Series|
+        Dependent variable values (or, if fitting a generative model, 
+        ``None``). Should be of shape (Nsamples,...).  Default = ``None``
+    batch_size : int
+        Number of samples to use per minibatch.  Use ``None`` to use a single
+        batch for all the data.
+        Default = ``None``
+    shuffle : bool
+        Whether to shuffle the data each epoch.  
+        Default = ``False``
+    testing : bool
+        Whether to treat data as testing data (allow no dependent variable).
+        Default = ``False``
     """
 
-    def __init__(self, x=None, y=None, batch_size=128, shuffle=True):
+    def __init__(self,
+                 x=None,
+                 y=None,
+                 batch_size=None,
+                 shuffle=False,
+                 test=False):
 
         # Check types
         data_types = (np.ndarray, pd.DataFrame, pd.Series)
@@ -37,12 +61,15 @@ class DataGenerator(BaseDataGenerator):
             raise TypeError('x must be an ndarray, a DataFrame, or a Series')
         if y is not None and not isinstance(y, data_types):
             raise TypeError('y must be an ndarray, a DataFrame, or a Series')
-        if not isinstance(batch_size, int):
-            raise TypeError('batch_size must be an int')
-        if batch_size < 1:
-            raise ValueError('batch_size must be >0')
+        if batch_size is not None:
+            if not isinstance(batch_size, int):
+                raise TypeError('batch_size must be an int')
+            if batch_size < 1:
+                raise ValueError('batch_size must be >0')
         if not isinstance(shuffle, bool):
             raise TypeError('shuffle must be True or False')
+        if not isinstance(test, bool):
+            raise TypeError('test must be True or False')
 
         # Check sizes are consistent
         if x is not None and y is not None:
@@ -50,13 +77,19 @@ class DataGenerator(BaseDataGenerator):
                 raise ValueError('x and y must contain same number of samples')
 
         # Generative model?
-        if y is None:
+        if not test and y is None:
             y = x
             x = None
 
+        # Number of samples
+        if x is None:
+            self._n_samples = y.shape[0]
+        else:
+            self._n_samples = x.shape[0]
+
         # Batch size
-        if y.shape[0] < batch_size:
-            self._batch_size = y.shape[0]
+        if batch_size is None or y.shape[0] < batch_size:
+            self._batch_size = self._n_samples
         else:
             self._batch_size = batch_size
 
@@ -72,7 +105,7 @@ class DataGenerator(BaseDataGenerator):
     @property
     def n_samples(self):
         """Number of samples in the dataset"""
-        return self.y.shape[0]
+        return self._n_samples
 
 
     @property
@@ -98,10 +131,12 @@ class DataGenerator(BaseDataGenerator):
             x = self.x[ix, ...]
 
         # Get y data
-        if isinstance(self.y, pd.DataFrame):
-            x = self.y.iloc[ix, :]
+        if self.y is None:
+            y = None
+        elif isinstance(self.y, pd.DataFrame):
+            y = self.y.iloc[ix, :]
         elif isinstance(self.y, pd.Series):
-            x = self.y.iloc[ix]
+            y = self.y.iloc[ix]
         else:
             y = self.y[ix, ...]
 
@@ -115,3 +150,16 @@ class DataGenerator(BaseDataGenerator):
             self.ids = np.random.permutation(self.n_samples)
         else:
             self.ids = np.arange(self.n_samples, dtype=np.uint64)
+
+
+
+def make_generator(x=None, y=None, batch_size=None, shuffle=False, test=False):
+    """Make input a DataGenerator if not already"""
+    if isinstance(x, DataGenerator):
+        return x
+    else:
+        return DataGenerator(x, y, batch_size=batch_size,
+                             shuffle=shuffle, test=test)
+
+
+

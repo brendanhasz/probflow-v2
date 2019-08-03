@@ -25,7 +25,7 @@ def test_DataGenerator():
     # Check properties
     assert dg.n_samples == 100
     assert dg.batch_size == 5
-    assert dg.shuffle == True
+    assert dg.shuffle == False
 
     #len should return # batches per epoch
     assert len(dg) == 20
@@ -45,6 +45,7 @@ def test_DataGenerator():
     assert np.all(y1==y2)
     
     # but not after shuffling
+    dg.shuffle = True
     dg.on_epoch_end()
     x2, y2 = dg[0]
     assert np.all(x1!=x2)

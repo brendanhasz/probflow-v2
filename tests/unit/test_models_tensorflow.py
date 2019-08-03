@@ -15,6 +15,7 @@ from probflow.distributions import Normal
 from probflow.parameters import *
 from probflow.modules import *
 from probflow.models import *
+from probflow.data import DataGenerator
 
 
 
@@ -83,9 +84,9 @@ def test_Model_0D():
     assert samples.shape[0] == 30
 
     # metric
-    metric = my_model.metric(x[:30], y[:30])
+    metric = my_model.metric('mae', x[:30], y[:30])
     assert isinstance(metric, np.floating)
-    metric = my_model.metric(x[:30], y[:30], metric='mse')
+    metric = my_model.metric('mse', x[:30], y[:30])
     assert isinstance(metric, np.floating)
     assert metric >= 0
     
@@ -211,6 +212,67 @@ def test_Model_0D():
 
 
 
+def test_Model_DataGenerators():
+    """Tests the probflow.models.Model sampling/predictive methods when
+    passed DataGenerators"""
+
+    class MyModel(Model):
+
+        def __init__(self):
+            self.weight = Parameter(name='Weight')
+            self.bias = Parameter(name='Bias')
+            self.std = ScaleParameter(name='Std')
+
+        def __call__(self, x):
+            return Normal(x*self.weight() + self.bias(), self.std())
+
+    # Instantiate the model
+    my_model = MyModel()
+
+    # Make a DataGenerator
+    x = np.random.randn(100).astype('float32')
+    y = -x + 1
+    data = DataGenerator(x, y, batch_size=5)
+
+    # Fit the model
+    my_model.fit(data, epochs=10)
+
+    # predictive samples
+    samples = my_model.predictive_sample(data, n=50)
+    assert isinstance(samples, np.ndarray)
+    assert samples.ndim == 2
+    assert samples.shape[0] == 50
+    assert samples.shape[1] == 100
+    
+    # aleatoric samples
+    samples = my_model.aleatoric_sample(data, n=50)
+    assert isinstance(samples, np.ndarray)
+    assert samples.ndim == 2
+    assert samples.shape[0] == 50
+    assert samples.shape[1] == 100
+
+    # epistemic samples
+    samples = my_model.epistemic_sample(data, n=50)
+    assert isinstance(samples, np.ndarray)
+    assert samples.ndim == 2
+    assert samples.shape[0] == 50
+    assert samples.shape[1] == 100
+
+    # predict
+    samples = my_model.predict(data)
+    assert isinstance(samples, np.ndarray)
+    assert samples.ndim == 1
+    assert samples.shape[0] == 100
+
+    # metric
+    metric = my_model.metric('mae', data)
+    assert isinstance(metric, np.floating)
+    metric = my_model.metric('mse', data)
+    assert isinstance(metric, np.floating)
+    assert metric >= 0
+    
+
+
 def test_Model_1D():
     """Tests the probflow.models.Model abstract base class"""
 
@@ -270,9 +332,9 @@ def test_Model_1D():
     assert samples.shape[1] == 1
 
     # metric
-    metric = my_model.metric(x[:30, :], y[:30, :])
+    metric = my_model.metric('mse', x[:30, :], y[:30, :])
     assert isinstance(metric, np.floating)
-    metric = my_model.metric(x[:30, :], y[:30, :], metric='mse')
+    metric = my_model.metric('mae', x[:30, :], y[:30, :])
     assert isinstance(metric, np.floating)
     assert metric >= 0
     
