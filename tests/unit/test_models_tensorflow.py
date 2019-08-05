@@ -210,6 +210,58 @@ def test_Model_0D():
     assert all(val[v].ndim == 1 for v in val)
     assert all(val[v].shape[0] == 20 for v in val)
 
+    # log_prob should return log prob of each sample by default
+    probs = my_model.log_prob(x[:30], y[:30])
+    assert isinstance(probs, np.ndarray)
+    assert probs.ndim == 1
+    assert probs.shape[0] == 30
+
+    # log_prob should return sum if individually = False
+    s_prob = my_model.log_prob(x[:30], y[:30], individually=False)
+    assert isinstance(s_prob, np.floating)
+    assert s_prob == np.sum(probs)
+
+    # log_prob should return samples w/ distribution = True
+    probs = my_model.log_prob(x[:30], y[:30], n=10, distribution=True)
+    assert isinstance(probs, np.ndarray)
+    assert probs.ndim == 2
+    assert probs.shape[0] == 30
+    assert probs.shape[1] == 10
+
+    # log_prob should return samples w/ distribution = True
+    probs = my_model.log_prob(x[:30], y[:30], n=10,
+                               distribution=True, individually=False)
+    assert isinstance(probs, np.ndarray)
+    assert probs.ndim == 1
+    assert probs.shape[0] == 10
+
+    # prob should return prob of each sample by default
+    probs = my_model.prob(x[:30], y[:30])
+    assert isinstance(probs, np.ndarray)
+    assert probs.ndim == 1
+    assert probs.shape[0] == 30
+    assert np.all(probs >= 0)
+
+    # prob should return sum if individually = False
+    s_prob = my_model.prob(x[:30], y[:30], individually=False)
+    assert isinstance(s_prob, np.floating)
+
+    # prob should return samples w/ distribution = True
+    probs = my_model.prob(x[:30], y[:30], n=10, distribution=True)
+    assert isinstance(probs, np.ndarray)
+    assert probs.ndim == 2
+    assert probs.shape[0] == 30
+    assert probs.shape[1] == 10
+    assert np.all(probs >= 0)
+
+    # prob should return samples w/ distribution = True
+    probs = my_model.prob(x[:30], y[:30], n=10,
+                               distribution=True, individually=False)
+    assert isinstance(probs, np.ndarray)
+    assert probs.ndim == 1
+    assert probs.shape[0] == 10
+    assert np.all(probs >= 0)
+
 
 
 def test_Model_DataGenerators():

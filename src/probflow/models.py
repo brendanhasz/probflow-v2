@@ -437,7 +437,7 @@ class Model(Module):
         # Get true values and predictions
         y_true = []
         y_pred = []
-        for x_data, y_data in make_generator(x, y):
+        for x_data, y_data in make_generator(x, y, test=True):
             y_true += [y_data]
             y_pred += [self(x_data).mean().numpy()]
         y_true = np.concatenate(y_true, axis=0)
@@ -736,9 +736,30 @@ class Model(Module):
             Log probabilities. Shape is determined by ``individually``, 
             ``distribution``, and ``n`` kwargs.
         """
-        pass
-        # TODO
-        # TODO: handle when x is a DataGenerator, or y=None
+
+        # Get a distribution of samples
+        if distribution:
+            with Sampling():
+                probs = []
+                for i in range(n):
+                    t_probs = []
+                    for x_data, y_data in make_generator(x, y, test=True):
+                        t_probs += [self(x_data).log_prob(y_data)]
+                    probs += [np.concatenate(t_probs, axis=0)]
+            probs = np.stack(probs, axis=probs[0].ndim)
+
+        # Use MAP estimates
+        else:
+            probs = []
+            for x_data, y_data in make_generator(x, y, test=True):
+                probs += [self(x_data).log_prob(y_data)]
+            probs = np.concatenate(probs, axis=0)
+
+        # Return log prob of each sample or sum of log probs
+        if individually:
+            return probs
+        else:
+            return np.sum(probs, axis=0)
 
 
     def log_prob_by(self, 
@@ -823,9 +844,9 @@ class Model(Module):
             Probabilities. Shape is determined by ``individually``, 
             ``distribution``, and ``n`` kwargs.
         """
-        pass
-        # TODO
-        # TODO: handle when x is a DataGenerator, or y=None
+        return np.exp(self.log_prob(x, y, n=n,
+                                    individually=individually,
+                                    distribution=distribution))
 
 
     def prob_by(self, 
