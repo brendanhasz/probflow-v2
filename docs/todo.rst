@@ -10,17 +10,19 @@ are totally welcome!
 Backlog
 -------
 
-* Stats test and test speed on large dataset (looked like there was some kind of autograph warning w/ kl div?)
+* Stats tests
+* Speed tests on large dataset (looked like there was some kind of autograph warning?)
 * Model evaluation methods (ones to be used in readme)
 * Tests for those
-* Docs for everything implemented so far
 * README / index
 * User guide
 * Examples
-* Make sure API is fully documented
+* Docs for everything implemented so far
+* Merge back to main repo and release 2.0.0
 * Different plotting methods for different types of dists (both for Parameter priors/posteriors and predictive distribution plots)
 * All model evaluation methods + specialized types of models
 * Make Module.trainable_variables return tf.Variables which are properties of module+sub-modules as well (and not neccesarily in parameters, also allow embedding of tf.Modules?)
+* Real-world examples w/ public BigQuery datasets
 * Bayes estimate / decision methods
 * Convolutional modules
 
