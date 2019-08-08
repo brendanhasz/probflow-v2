@@ -129,11 +129,12 @@ class Model(Module):
 
         @tf.function
         def train_step(x_data, y_data):
+            nb = x_data.shape[0] #number of samples in this batch
             with Sampling(n=1, flipout=flipout):
                 with tf.GradientTape() as tape:
                     log_likelihoods = self(x_data).log_prob(y_data)
                     kl_loss = self.kl_loss()
-                    elbo_loss = kl_loss/n - tf.reduce_mean(log_likelihoods)
+                    elbo_loss = kl_loss/n - tf.reduce_sum(log_likelihoods)/nb
                 variables = self.trainable_variables
                 gradients = tape.gradient(elbo_loss, variables)
                 self._optimizer.apply_gradients(zip(gradients, variables))

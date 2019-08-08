@@ -54,9 +54,9 @@ class LinearRegression(ContinuousModel):
     """
 
     def __init__(self, d: int):
-        self.weights = Parameter([d, 1])
-        self.bias = Parameter()
-        self.std = ScaleParameter()
+        self.weights = Parameter([d, 1], name='weights')
+        self.bias = Parameter(name='bias')
+        self.std = ScaleParameter(name='std')
 
 
     def __call__(self, x):
@@ -87,8 +87,8 @@ class LogisticRegression(CategoricalModel):
     """
 
     def __init__(self, d: int, k: int = 2):
-        self.weights = Parameter([d, k-1])
-        self.bias = Parameter([k-1])
+        self.weights = Parameter([d, k-1], name='weights')
+        self.bias = Parameter([k-1], name='bias')
 
 
     def __call__(self, x):
@@ -115,8 +115,8 @@ class PoissonRegression(DiscreteModel):
     """
 
     def __init__(self, d: int):
-        self.weights = Parameter([d, 1])
-        self.bias = Parameter()
+        self.weights = Parameter([d, 1], name='weights')
+        self.bias = Parameter(name='bias')
 
 
     def __call__(self, x):
@@ -154,7 +154,10 @@ class DenseNetwork(Module):
     def __init__(self, d: List[int], activation: Callable = O.relu):
         self.activations = [activation for i in range(len(d)-2)]
         self.activations += [lambda x: x]
-        self.layers = [Dense(d[i], d[i+1]) for i in range(len(d)-1)]
+        name = '' if name is None else name+'_'
+        names = [name+'Dense'+str(i) for i in range(len(d)-1)]
+        self.layers = [Dense(d[i], d[i+1], name=names[i]) 
+                       for i in range(len(d)-1)]
 
 
     def __call__(self, x):
@@ -190,7 +193,7 @@ class DenseRegression(ContinuousModel):
 
     def __init__(self, d: List[int]):
         self.network = DenseNetwork(d)
-        self.std = ScaleParameter()
+        self.std = ScaleParameter(name='std')
 
 
     def __call__(self, x):
