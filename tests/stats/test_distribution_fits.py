@@ -53,3 +53,88 @@ def test_fit_normal():
     assert ub > sig
     assert is_close(sig, model.posterior_mean('sig'), th=0.2)
 
+
+
+# TODO: StudentT
+
+
+
+# TODO: Cauchy
+
+
+
+# TODO: Gamma
+
+
+
+# TODO: InverseGamma
+
+
+
+def test_fit_bernoulli():
+    """Test fitting a bernoulli distribution"""
+
+    # Set random seed
+    np.random.seed(1234)
+    tf.random.set_seed(1234)
+
+    # Generate data
+    N = 1000
+    prob = 0.7
+    x = (tf.random.uniform([N]) < prob).numpy().astype('float32')
+
+    class BernoulliModel(pf.Model):
+        def __init__(self):
+            self.prob = pf.Parameter(name='prob')
+        def __call__(self):
+            return pf.Bernoulli(probs=1.0/(1.0+tf.exp(-self.prob())))
+
+    # Create and fit model
+    model = BernoulliModel()
+    model.fit(x, batch_size=100, epochs=1000, learning_rate=1e-2)
+
+    # Check inferences for mean are correct
+    lb, ub = model.posterior_ci('prob')
+    assert 1.0/(1.0+np.exp(-lb)) < prob
+    assert 1.0/(1.0+np.exp(-ub)) > prob
+    assert is_close(prob, 1.0/(1.0+np.exp(-model.posterior_mean('prob'))), th=0.1)
+
+
+
+# TODO: Categorical
+
+
+
+def test_fit_poisson():
+    """Test fitting a poisson distribution"""
+
+    # Set random seed
+    np.random.seed(1234)
+    tf.random.set_seed(1234)
+
+    # Generate data
+    N = 1000
+    rate = 5
+    x = tf.random.poisson([N], rate).numpy()
+
+    class PoissonModel(pf.Model):
+        def __init__(self):
+            self.rate = pf.Parameter(name='rate')
+        def __call__(self):
+            return pf.Poisson(tf.exp(self.rate()))
+
+    # Create and fit model
+    model = PoissonModel()
+    model.fit(x, batch_size=100, epochs=1000, learning_rate=1e-2)
+
+    # Check inferences for mean are correct
+    lb, ub = model.posterior_ci('rate')
+    assert np.exp(lb) < rate
+    assert np.exp(ub) > rate
+    assert is_close(rate, np.exp(model.posterior_mean('rate')), th=1.0)
+
+    # TODO: uh doesn't seem to be working.
+    import pdb; pdb.set_trace()
+
+
+# TODO: Dirichlet
