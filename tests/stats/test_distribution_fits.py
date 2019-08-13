@@ -85,9 +85,9 @@ def test_fit_bernoulli():
 
     class BernoulliModel(pf.Model):
         def __init__(self):
-            self.prob = pf.Parameter(name='prob')
+            self.prob = pf.BoundedParameter(name='prob')
         def __call__(self):
-            return pf.Bernoulli(probs=1.0/(1.0+tf.exp(-self.prob())))
+            return pf.Bernoulli(probs=self.prob())
 
     # Create and fit model
     model = BernoulliModel()
@@ -95,9 +95,9 @@ def test_fit_bernoulli():
 
     # Check inferences for mean are correct
     lb, ub = model.posterior_ci('prob')
-    assert 1.0/(1.0+np.exp(-lb)) < prob
-    assert 1.0/(1.0+np.exp(-ub)) > prob
-    assert is_close(prob, 1.0/(1.0+np.exp(-model.posterior_mean('prob'))), th=0.1)
+    assert lb < prob
+    assert ub > prob
+    assert is_close(prob, model.posterior_mean('prob'), th=0.1)
 
 
 

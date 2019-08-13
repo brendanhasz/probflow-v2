@@ -10,7 +10,6 @@ are totally welcome!
 Backlog
 -------
 
-* Add inv_transform to Parameter - need it for posterior_ci to work correctly w/ transformed variables!
 * Stats tests
 * Divide log likelihood sum by num in batch, don't take the avg (will cause mismatch between kl div and log likelihood contributions to loss on final batch if final batch size is < batch_size)
 * Speed tests on large dataset (looked like there was some kind of autograph warning?)
