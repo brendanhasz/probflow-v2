@@ -55,19 +55,122 @@ def test_fit_normal():
 
 
 
-# TODO: StudentT
+def test_fit_studentt():
+    """Test fitting a student t distribution"""
+
+    # Set random seed
+    np.random.seed(1234)
+    tf.random.set_seed(1234)
+
+    # Generate data
+    N = 1000
+    mu = np.random.randn(1).astype('float32')
+    sig = np.exp(np.random.randn(1)).astype('float32')
+    df = np.array([1.0]).astype('float32')
+    x = tfd.StudentT(df, mu, sig).sample(N).numpy()
+
+    class StudenttModel(pf.Model):
+        def __init__(self):
+            self.mu = pf.Parameter(name='mu')
+            self.sig = pf.ScaleParameter(name='sig')
+        def __call__(self):
+            return pf.StudentT(df, self.mu(), self.sig())
+
+    # Create and fit model
+    model = StudenttModel()
+    model.fit(x, batch_size=100, epochs=1000, learning_rate=1e-2)
+
+    # Check inferences for mean are correct
+    lb, ub = model.posterior_ci('mu')
+    assert lb < mu
+    assert ub > mu
+    assert is_close(mu, model.posterior_mean('mu'), th=0.2)
+
+    # Check inferences for std are correct
+    lb, ub = model.posterior_ci('sig')
+    assert lb < sig
+    assert ub > sig
+    assert is_close(sig, model.posterior_mean('sig'), th=0.2)
 
 
 
-# TODO: Cauchy
+def test_fit_cauchy():
+    """Test fitting a cauchy distribution"""
+
+    # Set random seed
+    np.random.seed(1234)
+    tf.random.set_seed(1234)
+
+    # Generate data
+    N = 1000
+    mu = np.random.randn(1).astype('float32')
+    sig = np.exp(np.random.randn(1)).astype('float32')
+    x = tfd.Cauchy(mu, sig).sample(N).numpy()
+
+    class CauchyModel(pf.Model):
+        def __init__(self):
+            self.mu = pf.Parameter(name='mu')
+            self.sig = pf.ScaleParameter(name='sig')
+        def __call__(self):
+            return pf.Cauchy(self.mu(), self.sig())
+
+    # Create and fit model
+    model = CauchyModel()
+    model.fit(x, batch_size=100, epochs=1000, learning_rate=1e-2)
+
+    # Check inferences for mean are correct
+    lb, ub = model.posterior_ci('mu')
+    assert lb < mu
+    assert ub > mu
+    assert is_close(mu, model.posterior_mean('mu'), th=0.2)
+
+    # Check inferences for std are correct
+    lb, ub = model.posterior_ci('sig')
+    assert lb < sig
+    assert ub > sig
+    assert is_close(sig, model.posterior_mean('sig'), th=0.2)
 
 
 
-# TODO: Gamma
+def test_fit_gamma():
+    """Test fitting a gamma distribution"""
 
+    # Set random seed
+    np.random.seed(1234)
+    tf.random.set_seed(1234)
 
+    # Generate data
+    N = 1000
+    alpha = np.array([1.0]).astype('float32')
+    beta = np.array([1.0]).astype('float32')
+    x = tfd.Gamma(alpha, beta).sample(N).numpy().astype('float32')
 
-# TODO: InverseGamma
+    class GammaModel(pf.Model):
+        def __init__(self):
+            self.alpha = pf.PositiveParameter(name='alpha')
+            self.beta = pf.PositiveParameter(name='beta')
+        def __call__(self):
+            return pf.Gamma(self.alpha(), self.beta())
+
+    # Create and fit model
+    model = GammaModel()
+    model.fit(x, batch_size=100, epochs=1000, learning_rate=1e-2)
+
+    # Check inferences for mean are correct
+    lb, ub = model.posterior_ci('alpha')
+    assert lb < alpha
+    assert ub > alpha
+    assert is_close(alpha, model.posterior_mean('alpha'), th=0.2)
+
+    # Check inferences for std are correct
+    lb, ub = model.posterior_ci('beta')
+    assert lb < beta
+    assert ub > beta
+    assert is_close(beta, model.posterior_mean('beta'), th=0.2)
+
+    # TODO: uh doesn't seem to be working. Priors on PositiveParameter?
+    import pdb; pdb.set_trace()
+    print('asdf')
 
 
 
@@ -135,6 +238,7 @@ def test_fit_poisson():
 
     # TODO: uh doesn't seem to be working.
     import pdb; pdb.set_trace()
+
 
 
 # TODO: Dirichlet
