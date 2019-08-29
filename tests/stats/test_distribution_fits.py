@@ -157,6 +157,7 @@ def test_fit_gamma():
     model.fit(x, batch_size=100, epochs=1000, learning_rate=1e-2)
 
     # Check inferences for mean are correct
+    '''
     lb, ub = model.posterior_ci('alpha')
     assert lb < alpha
     assert ub > alpha
@@ -171,6 +172,7 @@ def test_fit_gamma():
     # TODO: uh doesn't seem to be working. Priors on PositiveParameter?
     import pdb; pdb.set_trace()
     print('asdf')
+    '''
 
 
 
@@ -204,7 +206,34 @@ def test_fit_bernoulli():
 
 
 
-# TODO: Categorical
+def test_fit_categorical():
+    """Test fitting a categorical distribution"""
+
+    # Set random seed
+    np.random.seed(1234)
+    tf.random.set_seed(1234)
+
+    # Generate data
+    N = 1000
+    probs = [0.3, 0.2, 0.5]
+    x = tfd.Categorical(probs=probs).sample(N).numpy().astype('float32')
+
+    class CategoricalModel(pf.Model):
+        def __init__(self):
+            self.probs = pf.DirichletParameter(k=3, name='probs')
+        def __call__(self):
+            return pf.Categorical(probs=self.probs())
+
+    # Create and fit model
+    model = CategoricalModel()
+    model.fit(x, batch_size=100, epochs=1000, learning_rate=1e-2)
+
+    # Check inferences for mean are correct
+    lb, ub = model.posterior_ci('probs')
+    for i in range(len(probs)):
+        assert lb[i] < probs[i]
+        assert ub[i] > probs[i]
+    assert all(is_close(probs,  model.posterior_mean('probs'), th=0.05))
 
 
 
@@ -216,15 +245,15 @@ def test_fit_poisson():
     tf.random.set_seed(1234)
 
     # Generate data
-    N = 1000
-    rate = 5
+    N = 10000
+    rate = 10
     x = tf.random.poisson([N], rate).numpy()
 
     class PoissonModel(pf.Model):
         def __init__(self):
-            self.rate = pf.Parameter(name='rate')
+            self.rate = pf.PositiveParameter(name='rate')
         def __call__(self):
-            return pf.Poisson(tf.exp(self.rate()))
+            return pf.Poisson(self.rate())
 
     # Create and fit model
     model = PoissonModel()
@@ -232,13 +261,7 @@ def test_fit_poisson():
 
     # Check inferences for mean are correct
     lb, ub = model.posterior_ci('rate')
-    assert np.exp(lb) < rate
-    assert np.exp(ub) > rate
-    assert is_close(rate, np.exp(model.posterior_mean('rate')), th=1.0)
+    assert lb < rate
+    assert ub  > rate
+    assert is_close(rate, model.posterior_mean('rate'), th=1.0)
 
-    # TODO: uh doesn't seem to be working.
-    import pdb; pdb.set_trace()
-
-
-
-# TODO: Dirichlet

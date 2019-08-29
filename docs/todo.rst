@@ -10,9 +10,7 @@ are totally welcome!
 Backlog
 -------
 
-* Stats tests
 * DeterministicParameter?
-* Divide log likelihood sum by num in batch, don't take the avg (will cause mismatch between kl div and log likelihood contributions to loss on final batch if final batch size is < batch_size)
 * Speed tests on large dataset (looked like there was some kind of autograph warning?)
 * Model evaluation methods (ones to be used in readme)
 * Tests for those
@@ -36,5 +34,7 @@ Issues
 * LogisticRegression doesn't work at all! And seems to take a suspiciously long time...
 * Model.metric (mae) causes too much memory usage (out of mem on colab w/ 100k sample linear regression?). Accidentally making a N^2 matrix maybe?
 * Poisson currently requires y values to be floats? I think that's a TFP/TF 2.0 issue though (in their sc there's the line ``tf.maximum(y, 0.)``, which throws an error when y is of an int type).  Could cast inputs to float in pf.distributions.Poisson.__init__...
+* Gamma distribution isn't passing the fit test (in tests/stats/test_distribution_fits)
+* PyTorch support
 
 
