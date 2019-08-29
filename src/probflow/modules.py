@@ -407,8 +407,8 @@ class Embedding(Module):
     def __init__(self, 
                  k: int,
                  d: int,
-                 posterior: BaseDistribution = Deterministic,
-                 prior: Type[BaseDistribution] = Normal(0, 1),
+                 posterior: Type[BaseDistribution] = Deterministic,
+                 prior: BaseDistribution = Normal(0, 1),
                  initializer: Dict[str, Callable] = {'loc': xavier},
                  name: str = 'Embeddings'):
 
@@ -428,5 +428,3 @@ class Embedding(Module):
 
     def __call__(self, x):
         """Perform the forward pass"""
-        return O.gather(self.embeddings(), x)
-

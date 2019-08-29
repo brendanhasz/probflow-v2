@@ -10,7 +10,6 @@ are totally welcome!
 Backlog
 -------
 
-* DeterministicParameter?
 * Speed tests on large dataset (looked like there was some kind of autograph warning?)
 * Model evaluation methods (ones to be used in readme)
 * Tests for those
@@ -36,5 +35,5 @@ Issues
 * Poisson currently requires y values to be floats? I think that's a TFP/TF 2.0 issue though (in their sc there's the line ``tf.maximum(y, 0.)``, which throws an error when y is of an int type).  Could cast inputs to float in pf.distributions.Poisson.__init__...
 * Gamma distribution isn't passing the fit test (in tests/stats/test_distribution_fits)
 * PyTorch support
-
+* Add type hinting and enforcing
 
