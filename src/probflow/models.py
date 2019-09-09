@@ -565,14 +565,9 @@ class Model(Module):
 
     def posterior_plot(self,
                        params=None,
-                       n=10000,
-                       style='fill',
                        cols=1,
-                       bins=20,
-                       ci=0.0,
-                       bw=0.075,
-                       color=None,
-                       alpha=0.4):
+                       tight_layout=True,
+                       **kwargs):
         """Plot posterior distributions of the model's parameters
 
         TODO: Docs... params is a list of strings of params to plot
@@ -583,35 +578,22 @@ class Model(Module):
         params : str or list
             List of parameters to plot.  Default is to plot the posterior of
             all parameters in the model.
-        n : int
-            Number of samples to take from each posterior distribution for
-            estimating the density.  Default = 1000
-        style : str
-            Which style of plot to show.  Available types are:
-
-            * ``'fill'`` - filled density plot (the default)
-            * ``'line'`` - line density plot
-            * ``'hist'`` - histogram
-
         cols : int
             Divide the subplots into a grid with this many columns.
-        bins : int or list or |ndarray|
-            Number of bins to use for the posterior density histogram (if 
-            ``style='hist'``), or a list or vector of bin edges.
-        ci : float between 0 and 1
-            Confidence interval to plot.  Default = 0.0 (i.e., not plotted)
-        bw : float
-            Bandwidth of the kernel density estimate (if using ``style='line'``
-            or ``style='fill'``).  Default is 0.075
-        color : matplotlib color code or list of them
-            Color(s) to use to plot the distribution.
-            See https://matplotlib.org/tutorials/colors/colors.html
-            Default = use the default matplotlib color cycle
-        alpha : float between 0 and 1
-            Transparency of fill/histogram of the density
+        kwargs
+            Additional keyword arguments are passed to 
+            :meth:`.Parameter.posterior_plot`
         """
-        pass
-        # TODO
+        if params is None:
+            param_list = self.parameters
+        else:
+            param_list = [p for p in self.parameters if p.name in params]
+        rows = np.ceil(len(param_list)/cols)
+        for iP in range(len(param_list)):
+            plt.subplot(rows, cols, iP+1)
+            param_list[iP].posterior_plot(**kwargs)
+        if tight_layout:
+            plt.tight_layout()
 
 
     def prior_sample(self, params=None, n=10000):
@@ -650,14 +632,9 @@ class Model(Module):
 
     def prior_plot(self,
                    params=None,
-                   n=10000,
-                   style='fill',
                    cols=1,
-                   bins=20,
-                   ci=0.0,
-                   bw=0.075,
-                   color=None,
-                   alpha=0.4):
+                   tight_layout=True,
+                   **kwargs):
         """Plot prior distributions of the model's parameters
 
         TODO: Docs... params is a list of strings of params to plot
@@ -695,8 +672,16 @@ class Model(Module):
         alpha : float between 0 and 1
             Transparency of fill/histogram of the density
         """
-        pass
-        # TODO
+        if params is None:
+            param_list = self.parameters
+        else:
+            param_list = [p for p in self.parameters if p.name in params]
+        rows = np.ceil(len(param_list)/cols)
+        for iP in range(len(param_list)):
+            plt.subplot(rows, cols, iP+1)
+            param_list[iP].prior_plot(**kwargs)
+        if tight_layout:
+            plt.tight_layout()
 
 
     def log_prob(self, 

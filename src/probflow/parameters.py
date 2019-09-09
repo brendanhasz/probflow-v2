@@ -49,6 +49,7 @@ __all__ = [
 from typing import Union, List, Dict, Type, Callable
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 from probflow.core.settings import get_samples
 from probflow.core.settings import get_backend
@@ -405,10 +406,8 @@ class Parameter(BaseParameter):
         plot_dist(samples, xlabel=self.name, style=style, bins=bins, 
                   ci=ci, bw=bw, alpha=alpha, color=color)
 
-        # TODO: may want different plotting functions for different types of
-        # distributions? e.g. continuous vs discrete vs categorical dists
-        # should be plotted in different ways
-
+        # Label with parameter name
+        plt.xlabel(self.name)
 
 
     def prior_plot(self, n=10000, style='fill', bins=20, ci=0.0,
@@ -468,6 +467,8 @@ class Parameter(BaseParameter):
         plot_dist(samples, xlabel=self.name, style=style, bins=bins, 
                   ci=ci, bw=bw, alpha=alpha, color=color)
 
+        # Label with parameter name
+        plt.xlabel(self.name+' prior')
 
 
 class ScaleParameter(Parameter):
@@ -536,8 +537,8 @@ class ScaleParameter(Parameter):
                  transform=lambda x: O.sqrt(1.0/x),
                  initializer={'concentration': pos_xavier, 
                               'rate': pos_xavier},
-                 var_transform={'concentration': O.softplus,
-                                'rate': O.softplus},
+                 var_transform={'concentration': O.exp,
+                                'rate': O.exp},
                  name='ScaleParameter'):
         super().__init__(shape=shape,
                          posterior=posterior,

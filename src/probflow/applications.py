@@ -16,7 +16,7 @@ __all__ = [
 
 
 
-from typing import List, Callable
+from typing import List, Callable, Union
 
 import probflow.core.ops as O
 from probflow.parameters import Parameter
@@ -151,7 +151,10 @@ class DenseNetwork(Module):
         Activation function for each layer
     """
 
-    def __init__(self, d: List[int], activation: Callable = O.relu):
+    def __init__(self, 
+                 d: List[int], 
+                 activation: Callable = O.relu,
+                 name: Union[str, None] = None):
         self.activations = [activation for i in range(len(d)-2)]
         self.activations += [lambda x: x]
         name = '' if name is None else name+'_'

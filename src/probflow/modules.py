@@ -428,3 +428,5 @@ class Embedding(Module):
 
     def __call__(self, x):
         """Perform the forward pass"""
+        return O.gather(self.embeddings(), x)
+
